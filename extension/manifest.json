@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "FlowPilot AI",
+  "version": "1.0.0",
+  "description": "AI-powered browser automation agent that understands natural language and executes repetitive workflows",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs",
+    "downloads"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content-scripts/index.ts"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "index.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["src/content-scripts/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
