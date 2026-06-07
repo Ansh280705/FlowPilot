@@ -133,7 +133,9 @@ async function executePrompt(prompt: string): Promise<Response> {
     // AI may return { workflow: [...] }, { steps: [...] }, or a bare array
     const steps = workflowData?.workflow ?? workflowData?.steps ?? workflowData;
     if (!Array.isArray(steps) || steps.length === 0) {
-      return { success: false, error: 'AI did not return any workflow steps. Try a more specific prompt.' };
+      // Use the reasoning message if the AI returned one (e.g. not-automation detection)
+      const reason = workflowData?.reasoning || 'AI did not return any workflow steps. Try a more specific prompt.';
+      return { success: false, error: reason };
     }
 
     // Build a minimal Workflow object so executeWorkflow can run it

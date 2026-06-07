@@ -98,24 +98,34 @@ export class WorkflowExecutor {
     }
 
     const element = match.element as HTMLInputElement | HTMLTextAreaElement;
-    
+
     // Wait for element to be editable
     await this.waitForElement(element);
-    
+
     // Focus element
     element.focus();
     await this.wait(100);
 
-    // Clear existing value
-    element.value = '';
-    
-    // Type the value
-    for (const char of value) {
-      element.value += char;
-      element.dispatchEvent(new Event('input', { bubbles: true }));
-      element.dispatchEvent(new Event('change', { bubbles: true }));
-      await this.wait(50);
+    // Use React's internal setter if available (handles controlled components)
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+      element instanceof HTMLTextAreaElement
+        ? window.HTMLTextAreaElement.prototype
+        : window.HTMLInputElement.prototype,
+      'value'
+    )?.set;
+
+    if (nativeInputValueSetter) {
+      nativeInputValueSetter.call(element, value);
+    } else {
+      element.value = value;
     }
+
+    // Fire all events frameworks listen to
+    element.dispatchEvent(new Event('input',  { bubbles: true }));
+    element.dispatchEvent(new Event('change', { bubbles: true }));
+    element.dispatchEvent(new KeyboardEvent('keydown',  { bubbles: true }));
+    element.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true }));
+    element.dispatchEvent(new KeyboardEvent('keyup',    { bubbles: true }));
 
     await this.wait(step.waitTime || 200);
   }
@@ -262,13 +272,13 @@ export class WorkflowExecutor {
   }
 
   private findElement(target: string, selector?: string): any {
+    // 1. Try the explicit CSS selector first
     if (selector) {
       const element = document.querySelector(selector);
       if (element) {
         return { selector, element, type: 'css', confidence: 1 };
       }
-      
-      // Try self-healing
+      // Self-healing fallback
       const altSelector = this.selectorEngine.findAlternativeSelector(selector);
       if (altSelector) {
         const altElement = document.querySelector(altSelector);
@@ -278,7 +288,41 @@ export class WorkflowExecutor {
       }
     }
 
-    return this.selectorEngine.findElement(target);
+    // 2. Try the selectorEngine (text/placeholder/aria/label matching)
+    const engineMatch = this.selectorEngine.findElement(target);
+    if (engineMatch) return engineMatch;
+
+    // 3. Broad fuzzy fallback — scan all inputs/buttons directly
+    const needle = target.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const candidates = Array.from(
+      document.querySelectorAll('input, textarea, select, button, [role="button"]')
+    ) as HTMLElement[];
+
+    for (const el of candidates) {
+      const attrs = [
+        (el as HTMLInputElement).placeholder,
+        el.getAttribute('aria-label'),
+        el.getAttribute('name'),
+        el.id,
+        el.textContent,
+        // associated label
+        el.id ? document.querySelector(`label[for="${el.id}"]`)?.textContent : '',
+      ];
+      for (const attr of attrs) {
+        if (!attr) continue;
+        const hay = attr.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (hay.includes(needle) || needle.includes(hay.slice(0, Math.max(4, needle.length - 2)))) {
+          return {
+            selector: this.selectorEngine.generateSelector(el),
+            element: el,
+            type: 'fuzzy',
+            confidence: 0.7,
+          };
+        }
+      }
+    }
+
+    return null;
   }
 
   private async waitForElement(element: HTMLElement, timeout = 10000): Promise<void> {

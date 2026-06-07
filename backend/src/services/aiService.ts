@@ -18,6 +18,17 @@ export class AIService {
       throw new Error('GROQ_API_KEY not configured. Please set the environment variable to use AI features.');
     }
 
+    // Detect non-automation intents and reject early
+    const notAutomationMessage = this.checkIfNotAutomation(request.prompt);
+    if (notAutomationMessage) {
+      return {
+        enhancedPrompt: request.prompt,
+        workflow: [],
+        reasoning: notAutomationMessage,
+        confidence: 0,
+      };
+    }
+
     try {
       const prompt = this.buildPrompt(request);
 
@@ -26,39 +37,32 @@ export class AIService {
         messages: [
           {
             role: 'system',
-            content: `You are an expert browser automation AI. Your task is to convert natural language instructions into structured browser automation workflows.
+            content: `You are an expert browser automation AI. Convert natural language instructions into structured browser automation workflows.
 
-You MUST respond with ONLY valid JSON. No markdown, no explanations, no additional text.
+CRITICAL RULES:
+1. Respond with ONLY valid JSON — no markdown, no explanation, no extra text.
+2. The response must be a JSON object with a "workflow" key containing an array of steps.
+3. Every "type" step MUST have a concrete "value" extracted from the user's prompt. NEVER use placeholder text like "type name here" or "enter value". If the user says "name is John", value must be "John".
+4. Use {{variable}} syntax ONLY when the user explicitly defines a variable name.
 
-The workflow JSON should be an array of steps. Each step has:
-- id: unique string identifier
-- action: one of "click", "type", "select", "wait", "scroll", "hover", "upload", "extract", "navigate", "pressKey", "conditional"
-- target: description of the target element (for click, type, select, etc.)
-- value: value to type or select (for type, select, etc.)
+Step schema:
+- id: unique string
+- action: "click" | "type" | "select" | "wait" | "scroll" | "navigate" | "pressKey"
+- target: description of the element (e.g. "Customer Name input", "Book Appointment button")
+- value: the ACTUAL value to type or select (required for type/select actions)
 - selector: CSS selector if known
-- selectorType: "css", "xpath", "text", "aria", "placeholder", "label"
-- waitTime: milliseconds to wait after action (optional)
-- waitForSelector: selector to wait for (optional)
-- description: human-readable description of the step
+- selectorType: "css" | "placeholder" | "label" | "text" | "aria"
+- description: plain English summary of what this step does
 
-Example response format:
-[
-  {
-    "id": "step-1",
-    "action": "type",
-    "target": "patient name",
-    "value": "{{name}}",
-    "selectorType": "label",
-    "description": "Type patient name in the name field"
-  },
-  {
-    "id": "step-2",
-    "action": "click",
-    "target": "Finalize",
-    "selectorType": "text",
-    "description": "Click the Finalize button"
-  }
-]`,
+Example — user says "fill name as Rahul, phone 919876543210, date 06/15/2026 10:30 AM":
+{
+  "workflow": [
+    {"id":"s1","action":"type","target":"Customer Name","value":"Rahul","selectorType":"placeholder","description":"Type Rahul in the Customer Name field"},
+    {"id":"s2","action":"type","target":"Phone Number","value":"919876543210","selectorType":"placeholder","description":"Type phone number"},
+    {"id":"s3","action":"type","target":"Date & Time","value":"06/15/2026 10:30 AM","selectorType":"placeholder","description":"Enter date and time"},
+    {"id":"s4","action":"click","target":"Book Appointment","selectorType":"text","description":"Click Book Appointment button"}
+  ]
+}`,
           },
           {
             role: 'user',
@@ -71,10 +75,17 @@ Example response format:
       });
 
       const content = completion.choices[0]?.message?.content || '{}';
-      const parsed = JSON.parse(content);
+      let parsed: any;
+      try {
+        parsed = JSON.parse(content);
+      } catch {
+        // Sometimes the model wraps in markdown — strip it
+        const cleaned = content.replace(/```json\n?|\n?```/g, '').trim();
+        parsed = JSON.parse(cleaned);
+      }
 
-      // Extract workflow array if it's nested
-      const workflow = parsed.workflow || parsed.steps || parsed;
+      // Handle { workflow: [...] }, { steps: [...] }, or bare array
+      const workflow: WorkflowStep[] = parsed.workflow ?? parsed.steps ?? (Array.isArray(parsed) ? parsed : []);
 
       return {
         enhancedPrompt: this.enhancePrompt(request.prompt),
@@ -92,37 +103,35 @@ Example response format:
     let prompt = `User Request: ${request.prompt}\n\n`;
 
     if (request.pageContext) {
-      prompt += `Page Information:\n`;
-      prompt += `- URL: ${request.pageContext.url}\n`;
-      prompt += `- Title: ${request.pageContext.title}\n\n`;
+      prompt += `Page: ${request.pageContext.title} (${request.pageContext.url})\n\n`;
 
       if (request.pageContext.elements && request.pageContext.elements.length > 0) {
-        prompt += `Available Elements:\n`;
-        request.pageContext.elements.slice(0, 50).forEach((el, i) => {
-          prompt += `${i + 1}. ${el.type}: ${el.text || el.placeholder || el.label || el.ariaLabel || 'unnamed'}\n`;
+        prompt += `EXACT page elements (use these to pick selectors and targets):\n`;
+        request.pageContext.elements.slice(0, 60).forEach((el, i) => {
+          const parts: string[] = [`${i + 1}. [${el.type}]`];
+          if (el.placeholder) parts.push(`placeholder="${el.placeholder}"`);
+          if (el.label)       parts.push(`label="${el.label}"`);
+          if (el.ariaLabel)   parts.push(`aria-label="${el.ariaLabel}"`);
+          if (el.text)        parts.push(`text="${el.text.slice(0, 60)}"`);
+          if (el.id)          parts.push(`id="${el.id}"`);
+          if (el.name)        parts.push(`name="${el.name}"`);
+          if (el.selector)    parts.push(`selector="${el.selector}"`);
+          prompt += parts.join(' ') + '\n';
         });
         prompt += '\n';
-      }
-
-      if (request.pageContext.forms && request.pageContext.forms.length > 0) {
-        prompt += `Forms:\n`;
-        request.pageContext.forms.forEach((form, i) => {
-          prompt += `${i + 1}. Form with ${form.fields.length} fields\n`;
-        });
-        prompt += '\n';
+        prompt += `IMPORTANT: For each step, set "selector" to the exact CSS selector shown above, and set "target" to the placeholder/label text shown above. This ensures reliable element matching.\n\n`;
       }
     }
 
     if (request.variables) {
-      prompt += `Available Variables:\n`;
+      prompt += `Variables:\n`;
       Object.entries(request.variables).forEach(([key, value]) => {
-        prompt += `- {{${key}}}: ${value}\n`;
+        prompt += `  {{${key}}} = ${value}\n`;
       });
       prompt += '\n';
     }
 
-    prompt += `Generate a workflow to accomplish the user's request using the available elements. Use {{variable}} syntax for dynamic values.`;
-
+    prompt += `Now generate the workflow JSON object with a "workflow" array.`;
     return prompt;
   }
 
@@ -148,5 +157,49 @@ Example response format:
     enhanced = enhanced.charAt(0).toUpperCase() + enhanced.slice(1);
 
     return enhanced;
+  }
+
+  private checkIfNotAutomation(prompt: string): string | null {
+    const p = prompt.toLowerCase();
+
+    const codingKeywords = [
+      'solve', 'leetcode', 'hackerrank', 'codeforces', 'algorithm', 'data structure',
+      'write code', 'write a program', 'code for', 'implement', 'binary tree', 'linked list',
+      'dynamic programming', 'recursion', 'sorting', 'graph problem', 'complexity',
+      'time complexity', 'space complexity', 'big o', 'write function', 'debug this',
+      'fix my code', 'explain this code', 'what does this code',
+    ];
+
+    const questionKeywords = [
+      'what is', 'what are', 'how does', 'how do', 'why is', 'why does',
+      'explain', 'define', 'difference between', 'tell me about',
+      'who is', 'when was', 'where is',
+    ];
+
+    const automationKeywords = [
+      'click', 'fill', 'type', 'enter', 'submit', 'navigate', 'go to',
+      'open', 'search', 'select', 'upload', 'download', 'scroll', 'form',
+    ];
+
+    const isCoding = codingKeywords.some(k => p.includes(k));
+    const isQuestion = questionKeywords.some(k => p.includes(k));
+    const hasAutomationIntent = automationKeywords.some(k => p.includes(k));
+
+    if (isCoding) {
+      return (
+        '⚠️ FlowPilot AI is a browser automation tool — it clicks buttons, fills forms, and navigates pages. ' +
+        'It cannot solve coding problems or write algorithms. ' +
+        'For this, try ChatGPT, Claude, or Gemini.'
+      );
+    }
+
+    if (isQuestion && !hasAutomationIntent) {
+      return (
+        '⚠️ FlowPilot AI is a browser automation tool — it cannot answer questions or explain concepts. ' +
+        'Try asking it to automate a task instead, e.g. "fill the login form with email test@example.com and click Submit".'
+      );
+    }
+
+    return null;
   }
 }

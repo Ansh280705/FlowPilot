@@ -4,6 +4,8 @@ import { relations } from 'drizzle-orm';
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').notNull().unique(),
+  name: text('name'),
+  passwordHash: text('password_hash'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   plan: text('plan').notNull().default('free'), // free, pro, enterprise
 });
@@ -57,11 +59,30 @@ export const documents = pgTable('documents', {
   workflowId: uuid('workflow_id').references(() => workflows.id),
 });
 
+export const subscriptions = pgTable('subscriptions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id).unique(),
+  plan: text('plan').notNull().default('free'),
+  status: text('status').notNull().default('active'),
+  currentPeriodEnd: timestamp('current_period_end'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const usageLogs = pgTable('usage_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id),
+  month: text('month').notNull(), // YYYY-MM format
+  runCount: integer('run_count').notNull().default(0),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   workflows: many(workflows),
   executions: many(executions),
   documents: many(documents),
+  usageLogs: many(usageLogs),
 }));
 
 export const workflowsRelations = relations(workflows, ({ one, many }) => ({
@@ -99,6 +120,13 @@ export const documentsRelations = relations(documents, ({ one }) => ({
   }),
   user: one(users, {
     fields: [documents.userId],
+    references: [users.id],
+  }),
+}));
+
+export const usageLogsRelations = relations(usageLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [usageLogs.userId],
     references: [users.id],
   }),
 }));

@@ -5,6 +5,7 @@ import workflowRoutes from './routes/workflows';
 import executionRoutes from './routes/executions';
 import documentRoutes from './routes/documents';
 import aiRoutes from './routes/ai';
+import authRoutes from './routes/auth';
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/workflows', workflowRoutes);
 app.use('/api/executions', executionRoutes);
 app.use('/api/documents', documentRoutes);
