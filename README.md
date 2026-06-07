@@ -1,17 +1,52 @@
+<div align="center">
+
+<img src="extension/public/icon128.png" alt="FlowPilot AI Logo" width="80" height="80" />
+
 # FlowPilot AI
 
-AI-powered browser automation platform. Describe a task in plain English — FlowPilot figures out the steps and executes them on any webpage, no code required.
+**Automate any website with plain English.**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](#)
+[![React](https://img.shields.io/badge/React-18-61dafb.svg)](#)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](#)
+[![Chrome MV3](https://img.shields.io/badge/Chrome-MV3-yellow.svg)](#)
+[![Powered by Groq](https://img.shields.io/badge/AI-Groq%20%2F%20Llama%203.3-orange.svg)](#)
+
+[Demo](#demo) · [Features](#features) · [Getting Started](#getting-started) · [API Docs](#api-routes) · [Contributing](#contributing)
 
 ---
 
-## What It Does
+<img src="https://placehold.co/900x500/0f0f17/6366f1?text=FlowPilot+AI+—+Browser+Automation+Screenshot" alt="FlowPilot AI Screenshot" width="900" style="border-radius:12px" />
 
-FlowPilot AI is a Chrome extension that lets you automate repetitive browser tasks by just typing what you want. It analyses the current page, sends your prompt to an AI (Groq / Llama 3.3), and executes the generated steps — filling forms, clicking buttons, navigating pages — all automatically.
+</div>
 
-Example prompts:
-- `"Fill name as Rahul Sharma, phone 919876543210, date 06/15/2026 10:30 AM, then click Book Appointment"`
-- `"Search for react tutorial and click the first result"`
-- `"Fill the login form with email test@gmail.com and password mypass123 then click Login"`
+---
+
+## What is FlowPilot AI?
+
+FlowPilot AI is a **Chrome extension + web platform** that lets you automate repetitive browser tasks by just typing what you want. No code. No selectors. No scripts.
+
+Type a task → AI understands the page → steps execute automatically.
+
+```
+"Fill name as Rahul Sharma, phone 919876543210, date 06/15/2026 10:30 AM, then click Book Appointment"
+```
+
+FlowPilot analyses the active page, sends your prompt to **Groq (Llama 3.3 70B)**, generates browser automation steps, and executes them — filling forms, clicking buttons, navigating pages — all in real time.
+
+---
+
+## Features
+
+- 🤖 **AI-Powered** — Describe tasks in plain English, including Hinglish
+- ⚡ **Instant Execution** — Runs on any webpage, no setup per site
+- 🎥 **Workflow Recording** — Record your actions and replay them anytime
+- 💾 **Saved Workflows** — Store, duplicate, and rerun automations
+- 📄 **OCR Support** — Upload PDFs and images to extract data and use in automations
+- 📊 **Execution History** — Full logs for every run with step-by-step details
+- 🔐 **Auth + Plans** — Free tier, Pro, and Enterprise with usage limits
+- 🛡️ **Smart Guardrails** — Detects non-automation prompts (coding questions, LeetCode, etc.) and explains the tool's scope
 
 ---
 
@@ -19,189 +54,197 @@ Example prompts:
 
 ```
 flowpilot-ai/
-├── backend/          Express + TypeScript API server
-├── extension/        Chrome MV3 extension (React + TypeScript)
-├── frontend/         Marketing website + dashboard (React + JavaScript)
-└── shared/
-    └── types/        Shared TypeScript types (workflow, execution, etc.)
+├── 🖥️  backend/          Express + TypeScript API (port 3002)
+├── 🧩  extension/        Chrome MV3 extension (React + TypeScript)
+├── 🌐  frontend/         Marketing site + dashboard (React + JavaScript)
+└── 📦  shared/
+        └── types/        Shared TypeScript interfaces
 ```
 
 ---
 
 ## Tech Stack
 
-| Layer | Tech |
+| Layer | Technology |
 |---|---|
-| Chrome Extension | React 18, TypeScript, Vite, Tailwind CSS, @crxjs/vite-plugin |
-| Website Frontend | React 18, JavaScript, Vite, Tailwind CSS, React Router v6, Axios |
-| Backend API | Node.js, Express, TypeScript, tsx (watch mode) |
-| Database | NeonDB (serverless Postgres) via Drizzle ORM |
-| AI | Groq SDK → Llama 3.3 70B Versatile |
-| Auth | JWT (jsonwebtoken), bcryptjs |
-| OCR | Tesseract.js + pdf-parse |
-| File Upload | Multer (memory storage) |
+| **Chrome Extension** | React 18, TypeScript, Vite, Tailwind CSS, @crxjs/vite-plugin |
+| **Website** | React 18, JavaScript, Vite, Tailwind CSS, React Router v6, Axios |
+| **Backend API** | Node.js, Express, TypeScript, tsx |
+| **Database** | NeonDB (serverless Postgres) + Drizzle ORM |
+| **AI** | Groq SDK → Llama 3.3 70B Versatile |
+| **Auth** | JWT (jsonwebtoken) + bcryptjs |
+| **OCR** | Tesseract.js + pdf-parse |
 
 ---
 
-## Running Ports
+## Getting Started
 
-| Service | Port | Command |
-|---|---|---|
-| Backend API | 3002 | `cd backend && npm run dev` |
-| Frontend Website | 5173 | `cd frontend && npm run dev` |
-| Extension | Load `extension/dist/` in Chrome | `cd extension && npm run build` |
+### Prerequisites
 
----
+- Node.js 20+
+- A [NeonDB](https://neon.tech) database (free tier works)
+- A [Groq](https://console.groq.com) API key (free)
+- Chrome browser
 
-## Environment Variables
+### 1. Clone the repo
 
-### `backend/.env`
-```env
-PORT=3002
-NODE_ENV=development
-DATABASE_URL=postgresql://...your_neon_db_url...
-GROQ_API_KEY=your_groq_api_key
-JWT_SECRET=your_jwt_secret
-CORS_ORIGIN=*
-MAX_FILE_SIZE=10485760
+```bash
+git clone https://github.com/YOUR_USERNAME/flowpilot-ai.git
+cd flowpilot-ai
 ```
 
-### `extension/.env`
+### 2. Install dependencies
+
+```bash
+cd backend   && npm install && cd ..
+cd frontend  && npm install && cd ..
+cd extension && npm install && cd ..
+```
+
+### 3. Configure environment
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Open `backend/.env` and fill in:
+
+```env
+PORT=3002
+DATABASE_URL=postgresql://your_neon_connection_string
+GROQ_API_KEY=your_groq_api_key
+JWT_SECRET=any_random_secret_string
+```
+
+`extension/.env` is already configured for local development:
 ```env
 VITE_BACKEND_API_URL=http://localhost:3002/api
 ```
 
----
+### 4. Push database schema
 
-## Database Schema (NeonDB via Drizzle ORM)
+```bash
+cd backend
+npm run db:migrate
+```
 
-### Tables
+### 5. Start the backend
 
-**`users`**
-| Column | Type | Notes |
-|---|---|---|
-| id | uuid PK | auto-generated |
-| email | text unique | lowercase |
-| name | text | nullable |
-| password_hash | text | bcrypt hash |
-| plan | text | `free` / `pro` / `enterprise` |
-| created_at | timestamp | |
+```bash
+cd backend
+npm run dev
+# → http://localhost:3002
+```
 
-**`workflows`**
-| Column | Type | Notes |
-|---|---|---|
-| id | uuid PK | |
-| name | text | |
-| description | text | |
-| steps | jsonb | array of WorkflowStep |
-| variables | jsonb | array of WorkflowVariable |
-| user_id | uuid FK → users | |
-| is_public | boolean | default false |
-| tags | jsonb | string array |
-| created_at / updated_at | timestamp | |
+### 6. Start the frontend website
 
-**`executions`**
-| Column | Type | Notes |
-|---|---|---|
-| id | uuid PK | |
-| workflow_id | uuid FK → workflows | |
-| user_id | uuid FK → users | |
-| status | text | `pending/running/completed/failed/stopped` |
-| current_step | integer | |
-| logs | jsonb | array of ExecutionLog |
-| variables | jsonb | key-value pairs |
-| error | text | nullable |
-| started_at / completed_at | timestamp | |
+```bash
+cd frontend
+npm run dev
+# → http://localhost:5173
+```
 
-**`workflow_variables`**
-| Column | Type | Notes |
-|---|---|---|
-| id | uuid PK | |
-| workflow_id | uuid FK | |
-| name / type / default_value / description | text | |
-| required | boolean | |
+### 7. Build and load the extension
 
-**`documents`**
-| Column | Type | Notes |
-|---|---|---|
-| id | uuid PK | |
-| filename / type | text | `image` or `pdf` |
-| extracted_text | text | OCR output |
-| extracted_data | jsonb | structured key-value from OCR |
-| user_id | uuid FK | |
-| workflow_id | uuid FK nullable | |
+```bash
+cd extension
+npm run build
+```
 
-**`subscriptions`**
-| Column | Type | Notes |
-|---|---|---|
-| id | uuid PK | |
-| user_id | uuid FK unique | |
-| plan | text | |
-| status | text | `active/cancelled/past_due` |
-| current_period_end | timestamp | |
-
-**`usage_logs`**
-| Column | Type | Notes |
-|---|---|---|
-| id | uuid PK | |
-| user_id | uuid FK | |
-| month | text | `YYYY-MM` format |
-| run_count | integer | incremented per execution |
+Then in Chrome:
+1. Go to `chrome://extensions`
+2. Enable **Developer mode** (top right)
+3. Click **Load unpacked**
+4. Select the `extension/dist/` folder
 
 ---
 
-## Backend API Routes
+## Demo
+
+### Automating a form
+
+Type this in the extension popup:
+
+```
+Fill name as John Doe, email as john@example.com, then click Submit
+```
+
+FlowPilot will:
+1. Analyse the current page to find all inputs
+2. Generate steps using the real placeholder/label names
+3. Fill each field using React-compatible input events
+4. Click the submit button
+
+### Saving and replaying workflows
+
+Any automation can be saved as a named workflow from the **Workflows** tab and replayed on any matching page with one click.
+
+---
+
+## Plans & Pricing
+
+| Feature | Free | Pro | Enterprise |
+|---|:---:|:---:|:---:|
+| Runs per month | 50 | Unlimited | Unlimited |
+| Saved workflows | 3 | Unlimited | Unlimited |
+| Workflow recording | ❌ | ✅ | ✅ |
+| Priority AI model | ❌ | ✅ | ✅ |
+| API access | ❌ | ❌ | ✅ |
+| Team seats | ❌ | ❌ | 5 |
+| Support | Community | Email | Priority |
+| Price | $0 | $12/mo | $49/mo |
+
+---
+
+## API Routes
 
 ### Auth — `/api/auth`
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| POST | `/register` | none | Create account, returns JWT |
-| POST | `/login` | none | Login, returns JWT |
-| GET | `/me` | JWT | Get current user |
-| GET | `/usage` | JWT | Get monthly run count + totals |
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/register` | Create account → returns JWT |
+| `POST` | `/login` | Login → returns JWT |
+| `GET` | `/me` | Get current user (JWT required) |
+| `GET` | `/usage` | Monthly run count + totals |
 
 ### Workflows — `/api/workflows`
-| Method | Route | Description |
-|---|---|---|
-| GET | `/` | List all workflows |
-| GET | `/:id` | Get single workflow |
-| POST | `/` | Create workflow |
-| PUT | `/:id` | Update workflow + sync variables |
-| DELETE | `/:id` | Delete workflow |
 
-### Executions — `/api/executions`
-| Method | Route | Description |
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | `/` | List executions |
-| GET | `/:id` | Get single execution |
-| POST | `/` | Save execution record |
-| PUT | `/:id` | Update execution status |
+| `GET` | `/` | List all workflows |
+| `GET` | `/:id` | Get single workflow |
+| `POST` | `/` | Create workflow |
+| `PUT` | `/:id` | Update workflow |
+| `DELETE` | `/:id` | Delete workflow |
 
 ### AI — `/api/ai`
-| Method | Route | Description |
+
+| Method | Endpoint | Description |
 |---|---|---|
-| POST | `/generate-workflow` | Generate steps from prompt + page context |
-| POST | `/enhance-prompt` | Improve/translate the prompt |
+| `POST` | `/generate-workflow` | Generate automation steps from prompt |
+| `POST` | `/enhance-prompt` | Translate/improve the prompt |
 
 ### Documents — `/api/documents`
-| Method | Route | Description |
+
+| Method | Endpoint | Description |
 |---|---|---|
-| POST | `/upload` | Upload image/PDF, run OCR |
-| GET | `/` | List documents |
-| GET | `/:id` | Get document |
-| DELETE | `/:id` | Delete document |
+| `POST` | `/upload` | Upload image/PDF, run OCR |
+| `GET` | `/` | List documents |
+| `DELETE` | `/:id` | Delete document |
 
 ---
 
-## Plans & Limits
+## Database Schema
 
-| Plan | Runs/month | Saved Workflows | Recording | Price |
-|---|---|---|---|---|
-| Free | 50 | 3 | ❌ | $0 |
-| Pro | Unlimited | Unlimited | ✅ | $12/mo |
-| Enterprise | Unlimited | Unlimited | ✅ + API + Teams | $49/mo |
-
-Usage is tracked in `usage_logs` per `YYYY-MM`. The `checkUsageLimit` middleware on execution routes enforces the 50-run cap for free users and returns HTTP 429 with an upgrade message when exceeded.
+```
+users             id, email, name, password_hash, plan, created_at
+workflows         id, name, description, steps (jsonb), user_id, tags
+executions        id, workflow_id, user_id, status, logs (jsonb), current_step
+workflow_variables id, workflow_id, name, type, default_value, required
+documents         id, filename, type, extracted_text, extracted_data, user_id
+subscriptions     id, user_id, plan, status, current_period_end
+usage_logs        id, user_id, month (YYYY-MM), run_count
+```
 
 ---
 
@@ -209,201 +252,226 @@ Usage is tracked in `usage_logs` per `YYYY-MM`. The `checkUsageLimit` middleware
 
 ```
 extension/src/
-├── background/index.ts       Service worker — handles all messages, API calls
-├── content-scripts/index.ts  Injected into every page — executes steps, records actions
-├── App.tsx                   Popup UI — 3 tabs: Automate, Workflows, History
-├── components/
-│   ├── PromptInput.tsx
-│   ├── WorkflowList.tsx
-│   ├── ExecutionLogs.tsx
-│   └── RecordingControls.tsx
+├── background/index.ts        Service worker — orchestrates all automation
+├── content-scripts/index.ts   Page script — executes steps, records actions
+├── App.tsx                    Popup UI (Automate / Workflows / History tabs)
+├── components/                PromptInput, WorkflowList, ExecutionLogs, RecordingControls
 └── utils/
-    ├── workflowExecutor.ts   Runs each step (click, type, select, navigate…)
-    ├── workflowRecorder.ts   Records user actions into workflow steps
-    ├── selectorEngine.ts     Finds elements by text/placeholder/aria/label/fuzzy
-    ├── domAnalyzer.ts        Extracts page context (inputs, buttons, forms, tables)
-    └── chromeMessaging.ts    Type-safe chrome.runtime.sendMessage wrappers
+    ├── workflowExecutor.ts    Runs each step (click, type, select, navigate…)
+    ├── workflowRecorder.ts    Records user clicks/inputs into replayable steps
+    ├── selectorEngine.ts      3-layer element finding: CSS → aria/label → fuzzy
+    ├── domAnalyzer.ts         Extracts page context for AI (inputs, forms, buttons)
+    └── chromeMessaging.ts     Type-safe chrome.runtime message helpers
 ```
 
-### Message Flow
+### How a single automation works
+
 ```
-Popup (App.tsx)
-  → sendMessageToBackground({ type: 'EXECUTE_PROMPT', prompt })
-  → background/index.ts
-      → analyzePage() → content-scripts (ANALYZE_PAGE)
-      → POST /api/ai/generate-workflow
-      → for each step: executeStep() → content-scripts (EXECUTE_STEP)
-      → POST /api/executions (save result)
-  → returns { success, execution } to popup
+User types prompt in popup
+        ↓
+background/index.ts receives EXECUTE_PROMPT
+        ↓
+Injects content script if not already present
+        ↓
+Sends ANALYZE_PAGE → gets all inputs, buttons, forms on the page
+        ↓
+POST /api/ai/generate-workflow with prompt + page context
+        ↓
+Llama 3.3 returns structured steps with real selectors + values
+        ↓
+For each step → sends EXECUTE_STEP to content script
+        ↓
+WorkflowExecutor fills fields / clicks buttons using native setter trick
+        ↓
+Saves execution record to POST /api/executions
+        ↓
+Shows logs in popup
 ```
-
-### Content Script Injection
-The content script (`assets/content-script.js`) is declared in `manifest.json` and auto-injected on all URLs at `document_idle`. For tabs already open before the extension loaded, `ensureContentScriptLoaded()` in the background script injects it programmatically via `chrome.scripting.executeScript`.
-
-### AI Intent Detection
-Before sending to Groq, the `AIService.checkIfNotAutomation()` method detects coding/Q&A prompts (leetcode, solve, explain, algorithm, etc.) and returns an immediate error message instead of wasting an API call.
-
-### Element Finding Strategy (3 layers)
-1. **CSS selector** — if AI provides an exact selector from page context
-2. **SelectorEngine** — matches by text, placeholder, aria-label, label, id, name, className
-3. **Fuzzy fallback** — strips non-alphanumeric chars and does substring matching across all inputs/buttons
-
-### React-compatible `type` action
-Uses `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set` to bypass React's synthetic event system, then fires `input`, `change`, `keydown`, `keypress`, `keyup` events so controlled components update their state.
 
 ---
 
-## Frontend Website Pages
+## Available Scripts
 
-| Route | Page | Auth Required |
-|---|---|---|
-| `/` | Landing — hero, features, pricing | No |
-| `/login` | Login form | No |
-| `/register?plan=free\|pro\|enterprise` | Register with plan selection | No |
-| `/pricing` | Full plan comparison table | No |
-| `/dashboard` | Usage bar, workflows, recent runs | Yes |
-| `/settings` | Profile, plan, auth token copy | Yes |
-
-Auth is managed via `AuthContext` — JWT stored in `localStorage` as `fp_token`, set as `axios` default header on load.
-
----
-
-## Setup & Installation
-
-### 1. Clone & install dependencies
+### Backend
 ```bash
-cd backend   && npm install
-cd frontend  && npm install
-cd extension && npm install
+npm run dev          # Start dev server with hot reload (tsx watch)
+npm run build        # Compile TypeScript to dist/
+npm run db:generate  # Generate migration files from schema
+npm run db:migrate   # Push schema changes to NeonDB
+npm run db:studio    # Open Drizzle Studio (DB GUI)
 ```
 
-### 2. Configure environment
+### Extension
 ```bash
-cp backend/.env.example backend/.env
-# Fill in DATABASE_URL, GROQ_API_KEY, JWT_SECRET
+npm run build        # Build extension → extension/dist/
+npm run dev          # Vite dev server (for popup UI development only)
 ```
 
-### 3. Push DB schema to NeonDB
+### Frontend
 ```bash
-cd backend
-npm run db:migrate   # runs drizzle-kit push:pg
-```
-
-### 4. Start backend
-```bash
-cd backend && npm run dev
-# Runs on http://localhost:3002
-```
-
-### 5. Start frontend
-```bash
-cd frontend && npm run dev
-# Runs on http://localhost:5173
-```
-
-### 6. Build & load extension
-```bash
-cd extension && npm run build
-# In Chrome: go to chrome://extensions → Load unpacked → select extension/dist/
-```
-
-### 7. Rebuild DB migrations (if schema changes)
-```bash
-cd backend
-npm run db:generate   # drizzle-kit generate:pg → creates SQL migration files
-npm run db:migrate    # drizzle-kit push:pg → applies to NeonDB
+npm run dev          # Start Vite dev server on port 5173
+npm run build        # Build to frontend/dist/
 ```
 
 ---
 
-## Git & Version Control
+## Roadmap
 
-- Repo root: `c:\Users\anshr\Desktop\project\flowpilot-ai\`
-- Branch: `master`
-- `.gitignore` excludes: `node_modules/`, `dist/`, `.env`, `*.log`, `*.tsbuildinfo`
-- `.env.example` contains placeholder values only — never commit real credentials
-
----
-
-## Known Limitations / TODO
-
-- [ ] Extension login screen — currently uses a hardcoded `default-user` userId; needs to send JWT from extension to backend
-- [ ] Stripe integration — pricing page exists but checkout is not wired up
-- [ ] Workflow recording saves steps locally; needs backend sync
-- [ ] `chrome://` and `edge://` pages cannot run content scripts (by browser design)
-- [ ] Date/time inputs (`<input type="datetime-local">`) need special handling beyond plain `.value` setting
+- [ ] Extension login screen — link to website account from the popup
+- [ ] Stripe integration — wire up pricing page to Stripe checkout
+- [ ] `datetime-local` input support
+- [ ] Variable substitution UI — fill workflow variables from the popup before running
+- [ ] Schedule automations — run workflows at set times
+- [ ] Team workspace — share workflows across an enterprise team
+- [ ] Webhook triggers — trigger automations via API or external events
 
 ---
 
----
+## Folder Structure (Source Files Only)
 
-## AI Context Section
-
-> **Copy-paste this section when starting a new AI session about this project.**
-
----
-
-### FLOWPILOT AI — PROJECT CONTEXT
-
-**What it is:** A Chrome MV3 extension + Express backend + React website for AI-powered browser automation. Users type plain English instructions, the AI (Groq Llama 3.3 70B) generates workflow steps, and the extension executes them on the active tab.
-
-**Root directory:** `c:\Users\anshr\Desktop\project\flowpilot-ai\`
-
-**Three sub-projects:**
-- `backend/` — Express + TypeScript, port 3002, `npm run dev` uses tsx watch
-- `extension/` — Chrome MV3, React + TypeScript, built with Vite + @crxjs/vite-plugin, output in `extension/dist/`
-- `frontend/` — React + JavaScript (no TypeScript), Vite, port 5173, marketing site + dashboard
-
-**Database:** NeonDB (serverless Postgres) accessed via Drizzle ORM (`drizzle-orm/neon-http`). Schema in `backend/src/db/schema/index.ts`. Push schema changes with `npm run db:migrate` (uses `drizzle-kit push:pg`).
-
-**Tables:** `users`, `workflows`, `executions`, `workflow_variables`, `documents`, `subscriptions`, `usage_logs`
-
-**Auth:** JWT via `jsonwebtoken` + `bcryptjs`. Token stored in browser `localStorage` as `fp_token`. Backend middleware in `backend/src/middleware/auth.ts` (`authMiddleware`, `optionalAuth`). Usage limits enforced in `backend/src/middleware/usageCheck.ts`.
-
-**Plans:** free (50 runs/month, 3 workflows), pro (unlimited), enterprise (unlimited + teams + API)
-
-**AI service:** `backend/src/services/aiService.ts` — calls Groq, detects non-automation prompts (coding, Q&A) and returns an error message before calling the API. System prompt forces concrete values in generated steps.
-
-**Extension message flow:**
-1. Popup sends `chrome.runtime.sendMessage` to background service worker
-2. Background calls `ensureContentScriptLoaded()` (PINGs, injects `assets/content-script.js` if needed)
-3. Background calls `analyzePage()` → content script returns DOM elements, forms, inputs
-4. Background sends page context + prompt to `POST /api/ai/generate-workflow`
-5. Background executes each step by sending `EXECUTE_STEP` to content script
-6. Content script uses `WorkflowExecutor` → `SelectorEngine` (3-layer element finding: CSS selector → text/aria/label matching → fuzzy fallback)
-7. `type` action uses native input value setter + fires `input`/`change`/keyboard events for React compatibility
-8. Execution saved to `POST /api/executions`
-
-**Key files:**
-- `extension/src/background/index.ts` — all message handling, API calls, execution orchestration
-- `extension/src/content-scripts/index.ts` — PING/ANALYZE_PAGE/EXECUTE_STEP/START_RECORDING/STOP_RECORDING
-- `extension/src/utils/workflowExecutor.ts` — executes each action type
-- `extension/src/utils/selectorEngine.ts` — finds DOM elements, self-healing selectors
-- `extension/src/utils/domAnalyzer.ts` — extracts page context for AI
-- `extension/src/utils/workflowRecorder.ts` — records user actions into workflow steps
-- `backend/src/routes/auth.ts` — register, login, me, usage
-- `backend/src/routes/workflows.ts` — CRUD + variable sync on PUT
-- `backend/src/routes/executions.ts` — CRUD
-- `backend/src/routes/ai.ts` — generate-workflow, enhance-prompt
-- `backend/src/services/aiService.ts` — Groq integration, non-automation detection
-- `frontend/src/context/AuthContext.jsx` — JWT auth state, axios header injection
-- `shared/types/workflow.ts` — all shared TypeScript interfaces
-
-**Extension build:** `content-script.js` has a stable filename (set via `rollupOptions.output.chunkFileNames` in `extension/vite.config.ts`). Background service worker is loaded via `service-worker-loader.js` (crxjs pattern).
-
-**Env vars needed:**
-- `backend/.env`: `DATABASE_URL`, `GROQ_API_KEY`, `JWT_SECRET`, `PORT=3002`
-- `extension/.env`: `VITE_BACKEND_API_URL=http://localhost:3002/api`
-
-**Current state (as of June 2026):**
-- Auth (register/login/JWT) — fully working
-- Workflow CRUD — working
-- AI generation + execution — working for form fill + click actions
-- Usage tracking + plan limits — working
-- Frontend website (landing, login, register, dashboard, pricing, settings) — built and running
-- Extension login screen — NOT YET built (uses hardcoded `default-user`)
-- Stripe payments — NOT YET wired (pricing page exists)
+```
+flowpilot-ai/
+│
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   │   └── database.ts          NeonDB connection via Drizzle
+│   │   ├── db/
+│   │   │   ├── schema/index.ts      All table definitions
+│   │   │   └── migrations/          Auto-generated SQL migrations
+│   │   ├── middleware/
+│   │   │   ├── auth.ts              JWT authMiddleware + optionalAuth
+│   │   │   └── usageCheck.ts        Monthly run limit enforcement
+│   │   ├── routes/
+│   │   │   ├── auth.ts              Register, login, me, usage
+│   │   │   ├── workflows.ts         CRUD + variable sync
+│   │   │   ├── executions.ts        Execution records CRUD
+│   │   │   ├── documents.ts         File upload + OCR
+│   │   │   └── ai.ts                Workflow generation + prompt enhancement
+│   │   ├── services/
+│   │   │   ├── aiService.ts         Groq integration, non-automation detection
+│   │   │   └── ocrService.ts        Tesseract.js + pdf-parse
+│   │   └── index.ts                 Express app entry point
+│   ├── .env.example
+│   ├── drizzle.config.ts
+│   └── package.json
+│
+├── extension/
+│   ├── src/
+│   │   ├── background/index.ts      Service worker — orchestrates automation
+│   │   ├── content-scripts/index.ts Injected page script — executes steps
+│   │   ├── components/              Popup UI components
+│   │   ├── utils/
+│   │   │   ├── workflowExecutor.ts  Runs click/type/select/navigate actions
+│   │   │   ├── workflowRecorder.ts  Records user actions into workflow steps
+│   │   │   ├── selectorEngine.ts    3-layer element finding + self-healing
+│   │   │   ├── domAnalyzer.ts       Extracts page context for AI
+│   │   │   └── chromeMessaging.ts   Type-safe chrome.runtime helpers
+│   │   ├── types/workflow.ts        Local type aliases (mirrors shared/)
+│   │   ├── App.tsx                  Popup root — 3 tabs
+│   │   └── main.tsx
+│   ├── manifest.json
+│   ├── vite.config.ts
+│   └── package.json
+│
+├── frontend/
+│   ├── src/
+│   │   ├── context/AuthContext.jsx  JWT state + axios header injection
+│   │   ├── components/Navbar.jsx    Responsive nav with mobile menu
+│   │   └── pages/
+│   │       ├── Landing.jsx          Hero, features, pricing preview
+│   │       ├── Login.jsx
+│   │       ├── Register.jsx         Plan-aware signup (?plan=pro)
+│   │       ├── Dashboard.jsx        Usage bar, workflows, run history
+│   │       ├── Pricing.jsx          Full plan comparison table
+│   │       └── Settings.jsx         Profile, plan, auth token copy
+│   ├── vite.config.js
+│   └── package.json
+│
+└── shared/
+    └── types/workflow.ts            WorkflowStep, Workflow, Execution, PageContext…
+```
 
 ---
-#   F l o w P i l o t  
- 
+
+## Environment Variables Reference
+
+### `backend/.env`
+
+| Variable | Required | Example | Description |
+|---|:---:|---|---|
+| `PORT` | ✅ | `3002` | Server port |
+| `DATABASE_URL` | ✅ | `postgresql://...` | NeonDB connection string |
+| `GROQ_API_KEY` | ✅ | `gsk_...` | Groq API key |
+| `JWT_SECRET` | ✅ | `any-random-string` | JWT signing secret |
+| `NODE_ENV` | ❌ | `development` | Environment |
+| `CORS_ORIGIN` | ❌ | `*` | Allowed CORS origins |
+| `MAX_FILE_SIZE` | ❌ | `10485760` | Max upload size in bytes (10MB) |
+
+### `extension/.env`
+
+| Variable | Required | Default | Description |
+|---|:---:|---|---|
+| `VITE_BACKEND_API_URL` | ✅ | `http://localhost:3002/api` | Backend API base URL |
+
+---
+
+## How the AI Understands Your Page
+
+When you run an automation, FlowPilot sends the AI a structured snapshot of the current page:
+
+```
+Page: Book Appointment (http://example.com/booking)
+
+EXACT page elements:
+1. [input] placeholder="John Doe" label="CUSTOMER NAME" selector="input.name-field"
+2. [input] placeholder="919876543210" label="PHONE NUMBER" selector="input.phone-field"
+3. [input] placeholder="mm/dd/yyyy" label="DATE & TIME" selector="input[type=datetime-local]"
+4. [button] text="Book Appointment" selector="button.submit-btn"
+```
+
+The AI uses this to generate steps with **exact CSS selectors and real values** — no guessing. If a selector fails at runtime, `selectorEngine` falls back through label matching → aria-label → placeholder → fuzzy text scan.
+
+---
+
+## Prompt Tips
+
+| What you want | Example prompt |
+|---|---|
+| Fill a form | `Fill name as John, email as john@test.com, then click Submit` |
+| Login | `Enter email test@gmail.com and password Pass@123 then click Login` |
+| Search | `Type "react hooks" in the search box and press Enter` |
+| Navigate | `Go to https://github.com/trending` |
+| Click something | `Click the Sign Up button` |
+| Multi-step | `Fill the checkout form: name John Doe, card 4111111111111111, expiry 12/28, CVV 123, then click Place Order` |
+
+> **Tip:** Always include the actual values you want filled. The more specific you are, the better the result.
+
+---
+
+## Contributing
+
+Contributions are welcome. To get started:
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make your changes and test them
+4. Open a pull request with a clear description of what changed and why
+
+Please keep PRs focused — one feature or fix per PR. For major changes, open an issue first to discuss the approach.
+
+---
+
+## License
+
+MIT © 2026 FlowPilot AI
+
+---
+
+<div align="center">
+
+Built with ❤️ using React, Express, Groq, and NeonDB
+
+**[⭐ Star this repo](../../stargazers)** if FlowPilot saves you time
+
+</div>
