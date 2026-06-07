@@ -17,5 +17,16 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        // Give the content script a stable, predictable filename
+        chunkFileNames: (chunkInfo) => {
+          if (chunkInfo.name === 'index.ts' && chunkInfo.facadeModuleId?.includes('content-scripts')) {
+            return 'assets/content-script.js';
+          }
+          return 'assets/[name]-[hash].js';
+        },
+      },
+    },
   },
 });

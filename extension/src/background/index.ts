@@ -242,35 +242,47 @@ async function executeStep(tabId: number, step: any, variables: Record<string, s
 }
 
 async function ensureContentScriptLoaded(tabId: number): Promise<void> {
-  // Retry PING a few times — the content script may still be initialising
-  const maxRetries = 3;
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const response = await new Promise<any>((resolve, reject) => {
-        chrome.tabs.sendMessage(tabId, { type: 'PING' }, (res) => {
-          if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-          else resolve(res);
-        });
-      });
-      if (response?.success) return;
-    } catch {
-      // not yet ready — wait and retry
-    }
-    await new Promise(resolve => setTimeout(resolve, 300));
-  }
+  // Check if content script is already responsive
+  const isLoaded = await new Promise<boolean>((resolve) => {
+    chrome.tabs.sendMessage(tabId, { type: 'PING' }, (res) => {
+      if (chrome.runtime.lastError || !res?.success) resolve(false);
+      else resolve(true);
+    });
+  });
 
-  // As a last resort, try programmatic injection via scripting API
+  if (isLoaded) return;
+
+  // Content script not running on this tab yet — inject it programmatically.
+  // The scripting API requires the compiled .js file. We get it from the
+  // manifest that crxjs generates, which maps the content script correctly.
   try {
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ['src/content-scripts/index.ts'],
+      files: ['assets/content-script.js'],
     });
-    await new Promise(resolve => setTimeout(resolve, 400));
   } catch {
-    throw new Error(
-      'Content script could not be loaded on this page. ' +
-      'Try refreshing the page, or this page may not support extensions (e.g. chrome:// pages).'
-    );
+    // If injection fails (e.g. chrome:// pages), throw a user-friendly error
+    const tab = await chrome.tabs.get(tabId);
+    const url = tab.url || '';
+    if (url.startsWith('chrome://') || url.startsWith('edge://') || url.startsWith('about:')) {
+      throw new Error('This page does not support browser extensions. Please navigate to a regular website.');
+    }
+    throw new Error('Could not inject automation script. Please refresh the page and try again.');
+  }
+
+  // Wait for the script to initialise
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  // Verify it's now responding
+  const nowLoaded = await new Promise<boolean>((resolve) => {
+    chrome.tabs.sendMessage(tabId, { type: 'PING' }, (res) => {
+      if (chrome.runtime.lastError || !res?.success) resolve(false);
+      else resolve(true);
+    });
+  });
+
+  if (!nowLoaded) {
+    throw new Error('Automation script loaded but not responding. Please refresh the page and try again.');
   }
 }
 
