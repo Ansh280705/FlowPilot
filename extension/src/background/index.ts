@@ -242,16 +242,35 @@ async function executeStep(tabId: number, step: any, variables: Record<string, s
 }
 
 async function ensureContentScriptLoaded(tabId: number): Promise<void> {
+  // Retry PING a few times — the content script may still be initialising
+  const maxRetries = 3;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await new Promise<any>((resolve, reject) => {
+        chrome.tabs.sendMessage(tabId, { type: 'PING' }, (res) => {
+          if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+          else resolve(res);
+        });
+      });
+      if (response?.success) return;
+    } catch {
+      // not yet ready — wait and retry
+    }
+    await new Promise(resolve => setTimeout(resolve, 300));
+  }
+
+  // As a last resort, try programmatic injection via scripting API
   try {
-    await chrome.tabs.sendMessage(tabId, { type: 'PING' });
-  } catch {
-    // Content script not present — inject it programmatically
     await chrome.scripting.executeScript({
       target: { tabId },
       files: ['src/content-scripts/index.ts'],
     });
-    // Give it a moment to initialise
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 400));
+  } catch {
+    throw new Error(
+      'Content script could not be loaded on this page. ' +
+      'Try refreshing the page, or this page may not support extensions (e.g. chrome:// pages).'
+    );
   }
 }
 
