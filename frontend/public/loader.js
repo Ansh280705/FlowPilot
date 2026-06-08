@@ -10,7 +10,7 @@ setTimeout(function() {
 try {
   var cv = document.getElementById('c');
   var ctx = cv.getContext('2d');
-  var cx = 190, cy = 150;
+  var cx = 190, cy = 140;
   var t = 0;
 
   function easeOut(x) { return 1 - Math.pow(1 - x, 3); }
@@ -100,7 +100,7 @@ try {
       ctx.font = '600 36px Inter,Helvetica Neue,sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(232,232,245,' + p + ')';
-      ctx.fillText(word.slice(0, chars), cx, cy + 120);
+      ctx.fillText(word.slice(0, chars), cx, cy + 140);
 
       // Blinking cursor
       if (chars < word.length) {
@@ -108,7 +108,7 @@ try {
         var typedWidth = ctx.measureText(word.slice(0, chars)).width;
         var cursorX = cx - fullWidth / 2 + typedWidth + 1;
         ctx.fillStyle = 'rgba(232,232,245,' + (Math.sin(f * 0.45) > 0 ? 0.8 : 0) + ')';
-        ctx.fillRect(cursorX, cy + 93, 2, 28);
+        ctx.fillRect(cursorX, cy + 113, 2, 28);
       }
     }
 
@@ -118,7 +118,7 @@ try {
       ctx.font = '600 10px Inter,Helvetica Neue,sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(110,112,145,' + (p * 0.8) + ')';
-      ctx.fillText('AUTOMATION', cx, cy + 145);
+      ctx.fillText('AUTOMATION', cx, cy + 165);
     }
 
     // Outer pulse ring
