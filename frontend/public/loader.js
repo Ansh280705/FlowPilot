@@ -15,7 +15,7 @@ try {
 
   function easeOut(x) { return 1 - Math.pow(1 - x, 3); }
 
-  function drawHex(r, p, alpha, lw, ringIndex) {
+  function drawHex(r, p, alpha, lw) {
     var pts = [];
     for (var i = 0; i < 6; i++) {
       var a = Math.PI / 180 * (60 * i - 30);
@@ -31,16 +31,9 @@ try {
       var pr = pts[i - 1], cr = pts[idx];
       ctx.lineTo(pr[0] + (cr[0] - pr[0]) * seg, pr[1] + (cr[1] - pr[1]) * seg);
     }
-    // Alternating purple/blue gradient colors
-    var strokeColor = ringIndex % 2 === 0
-      ? 'rgba(124,58,237,' + alpha + ')'
-      : 'rgba(59,130,246,' + alpha + ')';
-    ctx.strokeStyle = strokeColor;
+    ctx.strokeStyle = 'rgba(140,145,180,' + alpha + ')';
     ctx.lineWidth = lw;
-    ctx.shadowColor = strokeColor;
-    ctx.shadowBlur = 5;
     ctx.stroke();
-    ctx.shadowBlur = 0;
   }
 
   function draw() {
@@ -57,7 +50,7 @@ try {
       var start = i * 18;
       if (f >= start) {
         var p = easeOut(Math.min(1, (f - start) / 50));
-        drawHex(r, p, alphas[i] * p, lws[i], i);
+        drawHex(r, p, alphas[i] * p, lws[i]);
       }
     });
 
@@ -106,11 +99,8 @@ try {
       var chars = Math.floor(p * word.length);
       ctx.font = '600 36px Inter,Helvetica Neue,sans-serif';
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'rgba(140,145,220,0.5)';
-      ctx.shadowBlur = 14;
       ctx.fillStyle = 'rgba(232,232,245,' + p + ')';
       ctx.fillText(word.slice(0, chars), cx, cy + 120);
-      ctx.shadowBlur = 0;
 
       // Blinking cursor
       if (chars < word.length) {
@@ -135,11 +125,8 @@ try {
     if (f > 310) {
       var pulse = Math.sin((f - 310) * 0.055);
       ctx.beginPath(); ctx.arc(cx, cy, 82 + pulse * 4, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(140,145,220,' + (0.12 + pulse * 0.06) + ')';
-      ctx.shadowColor = 'rgba(140,145,220,0.2)';
-      ctx.shadowBlur = 8;
-      ctx.lineWidth = 1.2; ctx.stroke();
-      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(120,125,160,' + (0.08 + pulse * 0.04) + ')';
+      ctx.lineWidth = 1; ctx.stroke();
     }
 
     t++;
