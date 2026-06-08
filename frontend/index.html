@@ -20,12 +20,12 @@
   </head>
   <body>
     <div id="loader-overlay">
-      <canvas id="c" width="680" height="380"></canvas>
+      <canvas id="c" width="380" height="380"></canvas>
     </div>
     <div id="root"></div>
     <script>
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');
-const cx=200,cy=190;
+const cx=190,cy=190;
 let t=0;
 
 function easeOut(t){return 1-Math.pow(1-t,3)}
@@ -45,8 +45,8 @@ function drawHex(r,p,alpha,lw){
 }
 
 function draw(){
-  ctx.clearRect(0,0,680,380);
-  ctx.fillStyle='#13131A';ctx.fillRect(0,0,680,380);
+  ctx.clearRect(0,0,380,380);
+  ctx.fillStyle='#13131A';ctx.fillRect(0,0,380,380);
   const f=t*1.6;
 
   const rings=[14,22,30,40,52,64,78];
@@ -95,25 +95,7 @@ function draw(){
     ctx.fillStyle=`rgba(255,255,255,0.7)`;ctx.fill();
   }
 
-  if(f>=195){
-    const p=easeOut(Math.min(1,(f-195)/50));
-    const word='orvicc',chars=Math.floor(p*word.length);
-    ctx.font='600 52px Inter,Helvetica Neue,sans-serif';
-    ctx.fillStyle=`rgba(232,232,245,${p})`;
-    ctx.fillText(word.slice(0,chars),320,cy+15);
-    if(chars<word.length){
-      const mw=ctx.measureText(word.slice(0,chars)).width;
-      ctx.fillStyle=`rgba(232,232,245,${Math.sin(f*0.45)>0?0.8:0})`;
-      ctx.fillRect(322+mw,cy-30,2,38);
-    }
-  }
-
-  if(f>=242){
-    const p=easeOut(Math.min(1,(f-242)/35));
-    ctx.font='400 11px Inter,Helvetica Neue,sans-serif';
-    ctx.fillStyle=`rgba(110,112,145,${p})`;
-    ctx.fillText('AUTOMATION',325,cy+42);
-  }
+  // Removed text blocks (orvicc and AUTOMATION) to show animated logo only
 
   if(f>310){
     const pulse=Math.sin((f-310)*0.055);
