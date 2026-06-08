@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk';
-import type { AIRequest, AIResponse, WorkflowStep } from '../../../shared/types/workflow';
+import type { AIRequest, AIResponse, WorkflowStep } from '../types/workflow';
 
 let groq: Groq | null = null;
 

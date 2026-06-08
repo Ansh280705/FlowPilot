@@ -1,6 +1,6 @@
 import express from 'express';
 import { AIService } from '../services/aiService';
-import type { AIRequest } from '../../../shared/types/workflow';
+import type { AIRequest } from '../types/workflow';
 
 const router = express.Router();
 const aiService = new AIService();
