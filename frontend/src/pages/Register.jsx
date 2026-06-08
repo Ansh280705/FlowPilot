@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { Brain, Eye, EyeOff, Check } from 'lucide-react'
+import { Eye, EyeOff, Check } from 'lucide-react'
 
 const planFeatures = {
   free: ['50 runs / month', '3 saved workflows'],
@@ -40,9 +40,7 @@ export default function Register() {
     <div className="min-h-screen pt-16 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <Brain className="w-6 h-6 text-white" />
-          </div>
+          <img src="/favicon.png" alt="Orvicc Logo" className="w-12 h-12 object-contain mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white">Create your account</h1>
           {plan !== 'free' && (
             <div className="mt-2 inline-flex items-center gap-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1 text-indigo-400 text-xs">

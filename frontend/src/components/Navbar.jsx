@@ -1,7 +1,7 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { Brain, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
@@ -17,9 +17,7 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0f0f17]/80 backdrop-blur-md border-b border-white/10">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <Brain className="w-5 h-5 text-white" />
-          </div>
+          <img src="/favicon.png" alt="Orvicc Logo" className="w-8 h-8 object-contain" />
           <span className="text-white font-bold text-lg">Orvicc</span>
         </Link>
 

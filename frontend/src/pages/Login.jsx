@@ -1,7 +1,7 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { Brain, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -30,9 +30,7 @@ export default function Login() {
     <div className="min-h-screen pt-16 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <Brain className="w-6 h-6 text-white" />
-          </div>
+          <img src="/favicon.png" alt="Orvicc Logo" className="w-12 h-12 object-contain mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white">Welcome back</h1>
           <p className="text-slate-400 mt-1">Sign in to your Orvicc account</p>
         </div>
