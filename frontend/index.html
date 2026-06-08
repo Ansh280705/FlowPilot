@@ -25,7 +25,7 @@
     <div id="root"></div>
     <script>
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');
-const cx=190,cy=190;
+const cx=190,cy=150;
 let t=0;
 
 function easeOut(t){return 1-Math.pow(1-t,3)}
@@ -41,7 +41,16 @@ function drawHex(r,p,alpha,lw){
     const pr=pts[i-1],cr=pts[idx];
     ctx.lineTo(pr[0]+(cr[0]-pr[0])*seg,pr[1]+(cr[1]-pr[1])*seg);
   }
-  ctx.strokeStyle=`rgba(140,145,180,${alpha})`;ctx.lineWidth=lw;ctx.stroke();
+  // Harmonious gradient colors: purple-to-blue colors
+  const strokeColor = i % 2 === 0 ? `rgba(124, 58, 237, ${alpha})` : `rgba(59, 130, 246, ${alpha})`;
+  ctx.strokeStyle=strokeColor;
+  ctx.lineWidth=lw;
+  
+  // Subtle vector-glow effect
+  ctx.shadowColor=strokeColor;
+  ctx.shadowBlur=4;
+  ctx.stroke();
+  ctx.shadowBlur=0; // Reset
 }
 
 function draw(){
@@ -95,17 +104,54 @@ function draw(){
     ctx.fillStyle=`rgba(255,255,255,0.7)`;ctx.fill();
   }
 
-  // Removed text blocks (orvicc and AUTOMATION) to show animated logo only
+  // Draw text at the bottom of the animation (centered under the mark)
+  if(f>=195){
+    const p=easeOut(Math.min(1,(f-195)/50));
+    const word='orvicc',chars=Math.floor(p*word.length);
+    ctx.font='600 36px Inter,Helvetica Neue,sans-serif';
+    ctx.textAlign='center';
+    
+    // Draw text glow
+    ctx.shadowColor='rgba(140, 145, 220, 0.4)';
+    ctx.shadowBlur=12;
+    ctx.fillStyle=`rgba(232,232,245,${p})`;
+    ctx.fillText(word.slice(0,chars),cx,cy+120);
+    
+    // Reset shadow
+    ctx.shadowBlur=0;
+    
+    if(chars<word.length){
+      const fullWidth=ctx.measureText(word).width;
+      const typedWidth=ctx.measureText(word.slice(0,chars)).width;
+      // Start drawing cursor relative to center of the text
+      const cursorX = cx - (fullWidth / 2) + typedWidth + 1;
+      ctx.fillStyle=`rgba(232,232,245,${Math.sin(f*0.45)>0?0.8:0})`;
+      ctx.fillRect(cursorX,cy+93,2,28);
+    }
+  }
+
+  if(f>=235){
+    const p=easeOut(Math.min(1,(f-235)/35));
+    ctx.font='600 10px Inter,Helvetica Neue,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillStyle=`rgba(110,112,145,${p*0.8})`;
+    ctx.letterSpacing='3px'; // Supported in modern canvas contexts
+    ctx.fillText('AUTOMATION',cx,cy+145);
+    ctx.letterSpacing='0px'; // Reset
+  }
 
   if(f>310){
     const pulse=Math.sin((f-310)*0.055);
     ctx.beginPath();ctx.arc(cx,cy,82+pulse*4,0,Math.PI*2);
-    ctx.strokeStyle=`rgba(120,125,160,${0.08+pulse*0.04})`;
-    ctx.lineWidth=1;ctx.stroke();
+    ctx.strokeStyle=`rgba(140,145,220,${0.12+pulse*0.06})`;
+    ctx.shadowColor='rgba(140, 145, 220, 0.2)';
+    ctx.shadowBlur=8;
+    ctx.lineWidth=1.2;ctx.stroke();
+    ctx.shadowBlur=0; // Reset
   }
 
   t++;
-  if(t > 330){
+  if(t > 340){
     const overlay=document.getElementById('loader-overlay');
     overlay.style.opacity='0';
     setTimeout(()=>overlay.style.display='none',500);
