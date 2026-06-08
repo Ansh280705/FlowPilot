@@ -1,6 +1,6 @@
-# FlowPilot AI Backend
+﻿# Orvicc Backend
 
-Node.js + Express backend API for FlowPilot AI browser automation platform.
+Node.js + Express backend API for Orvicc browser automation platform.
 
 ## Development
 

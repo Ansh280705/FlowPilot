@@ -1,4 +1,4 @@
-import Groq from 'groq-sdk';
+﻿import Groq from 'groq-sdk';
 import type { AIRequest, AIResponse, WorkflowStep } from '../types/workflow';
 
 let groq: Groq | null = null;
@@ -188,7 +188,7 @@ Example — user says "fill name as Rahul, phone 919876543210, date 06/15/2026 1
 
     if (isCoding) {
       return (
-        '⚠️ FlowPilot AI is a browser automation tool — it clicks buttons, fills forms, and navigates pages. ' +
+        '⚠️ Orvicc is a browser automation tool — it clicks buttons, fills forms, and navigates pages. ' +
         'It cannot solve coding problems or write algorithms. ' +
         'For this, try ChatGPT, Claude, or Gemini.'
       );
@@ -196,7 +196,7 @@ Example — user says "fill name as Rahul, phone 919876543210, date 06/15/2026 1
 
     if (isQuestion && !hasAutomationIntent) {
       return (
-        '⚠️ FlowPilot AI is a browser automation tool — it cannot answer questions or explain concepts. ' +
+        '⚠️ Orvicc is a browser automation tool — it cannot answer questions or explain concepts. ' +
         'Try asking it to automate a task instead, e.g. "fill the login form with email test@example.com and click Submit".'
       );
     }

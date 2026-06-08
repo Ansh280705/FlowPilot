@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Brain, Play, Square, History, Save, Sparkles, LogOut } from 'lucide-react';
 import PromptInput from './components/PromptInput';
 import WorkflowList from './components/WorkflowList';
@@ -140,7 +140,7 @@ function App() {
               <Brain className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-primary">FlowPilot AI</h1>
+              <h1 className="text-lg font-semibold text-primary">Orvicc</h1>
               <p className="text-xs text-secondary">AI Browser Automation</p>
             </div>
           </div>

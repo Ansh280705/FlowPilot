@@ -1,8 +1,8 @@
-<div align="center">
+﻿<div align="center">
 
-<img src="extension/public/icon128.png" alt="FlowPilot AI Logo" width="80" height="80" />
+<img src="extension/public/icon128.png" alt="Orvicc Logo" width="80" height="80" />
 
-# FlowPilot AI
+# Orvicc
 
 **Automate any website with plain English.**
 
@@ -17,15 +17,15 @@
 
 ---
 
-<img src="https://placehold.co/900x500/0f0f17/6366f1?text=FlowPilot+AI+—+Browser+Automation+Screenshot" alt="FlowPilot AI Screenshot" width="900" style="border-radius:12px" />
+<img src="https://placehold.co/900x500/0f0f17/6366f1?text=Orvicc+AI+—+Browser+Automation+Screenshot" alt="Orvicc Screenshot" width="900" style="border-radius:12px" />
 
 </div>
 
 ---
 
-## What is FlowPilot AI?
+## What is Orvicc?
 
-FlowPilot AI is a **Chrome extension + web platform** that lets you automate repetitive browser tasks by just typing what you want. No code. No selectors. No scripts.
+Orvicc is a **Chrome extension + web platform** that lets you automate repetitive browser tasks by just typing what you want. No code. No selectors. No scripts.
 
 Type a task → AI understands the page → steps execute automatically.
 
@@ -33,7 +33,7 @@ Type a task → AI understands the page → steps execute automatically.
 "Fill name as Rahul Sharma, phone 919876543210, date 06/15/2026 10:30 AM, then click Book Appointment"
 ```
 
-FlowPilot analyses the active page, sends your prompt to **Groq (Llama 3.3 70B)**, generates browser automation steps, and executes them — filling forms, clicking buttons, navigating pages — all in real time.
+Orvicc analyses the active page, sends your prompt to **Groq (Llama 3.3 70B)**, generates browser automation steps, and executes them — filling forms, clicking buttons, navigating pages — all in real time.
 
 ---
 
@@ -53,7 +53,7 @@ FlowPilot analyses the active page, sends your prompt to **Groq (Llama 3.3 70B)*
 ## Project Structure
 
 ```
-flowpilot-ai/
+Orvicc-ai/
 ├── 🖥️  backend/          Express + TypeScript API (port 3002)
 ├── 🧩  extension/        Chrome MV3 extension (React + TypeScript)
 ├── 🌐  frontend/         Marketing site + dashboard (React + JavaScript)
@@ -89,8 +89,8 @@ flowpilot-ai/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/flowpilot-ai.git
-cd flowpilot-ai
+git clone https://github.com/YOUR_USERNAME/Orvicc-ai.git
+cd Orvicc-ai
 ```
 
 ### 2. Install dependencies
@@ -169,7 +169,7 @@ Type this in the extension popup:
 Fill name as John Doe, email as john@example.com, then click Submit
 ```
 
-FlowPilot will:
+Orvicc will:
 1. Analyse the current page to find all inputs
 2. Generate steps using the real placeholder/label names
 3. Fill each field using React-compatible input events
@@ -330,7 +330,7 @@ npm run build        # Build to frontend/dist/
 ## Folder Structure (Source Files Only)
 
 ```
-flowpilot-ai/
+Orvicc-ai/
 │
 ├── backend/
 │   ├── src/
@@ -418,7 +418,7 @@ flowpilot-ai/
 
 ## How the AI Understands Your Page
 
-When you run an automation, FlowPilot sends the AI a structured snapshot of the current page:
+When you run an automation, Orvicc sends the AI a structured snapshot of the current page:
 
 ```
 Page: Book Appointment (http://example.com/booking)
@@ -464,7 +464,7 @@ Please keep PRs focused — one feature or fix per PR. For major changes, open a
 
 ## License
 
-MIT © 2026 FlowPilot AI
+MIT © 2026 Orvicc
 
 ---
 
@@ -472,6 +472,6 @@ MIT © 2026 FlowPilot AI
 
 Built with ❤️ using React, Express, Groq, and NeonDB
 
-**[⭐ Star this repo](../../stargazers)** if FlowPilot saves you time
+**[⭐ Star this repo](../../stargazers)** if Orvicc saves you time
 
 </div>

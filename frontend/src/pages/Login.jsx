@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Brain, Eye, EyeOff } from 'lucide-react'
@@ -34,7 +34,7 @@ export default function Login() {
             <Brain className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-white">Welcome back</h1>
-          <p className="text-slate-400 mt-1">Sign in to your FlowPilot account</p>
+          <p className="text-slate-400 mt-1">Sign in to your Orvicc account</p>
         </div>
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-8">

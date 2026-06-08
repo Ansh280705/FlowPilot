@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 import { Link } from 'react-router-dom'
 import { Brain, Zap, Shield, BarChart3, Chrome, ArrowRight, Check } from 'lucide-react'
 
@@ -29,7 +29,7 @@ export default function Landing() {
           <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">with plain English</span>
         </h1>
         <p className="text-xl text-slate-400 max-w-2xl mb-10">
-          FlowPilot AI is a Chrome extension that understands your instructions and automates repetitive tasks on any webpage — no code required.
+          Orvicc is a Chrome extension that understands your instructions and automates repetitive tasks on any webpage — no code required.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Link to="/register" className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-colors flex items-center gap-2">
@@ -94,7 +94,7 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="border-t border-white/10 py-8 px-4 text-center text-slate-500 text-sm">
-        © 2026 FlowPilot AI. All rights reserved.
+        © 2026 Orvicc. All rights reserved.
       </footer>
     </div>
   )

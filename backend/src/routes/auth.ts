@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { getDb } from '../config/database';
@@ -8,7 +8,7 @@ import { randomUUID } from 'crypto';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'flowpilot-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'Orvicc-secret-change-in-production';
 
 function makeToken(userId: string, plan: string) {
   return jwt.sign({ userId, plan }, JWT_SECRET, { expiresIn: '30d' });

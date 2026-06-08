@@ -1,4 +1,4 @@
-import type { Message, Response, Workflow, WorkflowExecution, AIRequest } from '../types/workflow';
+﻿import type { Message, Response, Workflow, WorkflowExecution, AIRequest } from '../types/workflow';
 
 const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:3002/api';
 const TOKEN_KEY = 'fp_token';
@@ -364,10 +364,10 @@ async function getExecutions(): Promise<Response> {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('FlowPilot AI extension installed');
+  console.log('Orvicc extension installed');
 });
 
-// Handle messages sent from the FlowPilot website (externally_connectable)
+// Handle messages sent from the Orvicc website (externally_connectable)
 chrome.runtime.onMessageExternal.addListener(
   (message: Message, _sender, sendResponse) => {
     console.log('External message received:', message.type);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Link } from 'react-router-dom'
 import { User, CreditCard, Key, ArrowUpRight } from 'lucide-react'
@@ -72,7 +72,7 @@ export default function Settings() {
             <Key className="w-4 h-4 text-slate-400" />
             <h2 className="text-white font-semibold">Extension Auth Token</h2>
           </div>
-          <p className="text-slate-400 text-sm mb-4">Copy this token and paste it in the FlowPilot extension to link your account.</p>
+          <p className="text-slate-400 text-sm mb-4">Copy this token and paste it in the Orvicc extension to link your account.</p>
           <div className="flex gap-2">
             <div className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-slate-400 text-xs font-mono truncate">
               {localStorage.getItem('fp_token')?.slice(0, 40)}...

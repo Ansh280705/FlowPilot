@@ -1,6 +1,6 @@
-#!/bin/bash
+﻿#!/bin/bash
 
-echo "🚀 Setting up FlowPilot AI..."
+echo "🚀 Setting up Orvicc..."
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then

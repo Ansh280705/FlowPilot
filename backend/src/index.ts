@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import workflowRoutes from './routes/workflows';
@@ -32,7 +32,7 @@ app.use('/api/ai', aiRoutes);
 // Root route
 app.get('/', (req, res) => {
   res.json({
-    name: 'FlowPilot AI Backend',
+    name: 'Orvicc Backend',
     version: '1.0.0',
     status: 'running',
     endpoints: {
@@ -62,6 +62,6 @@ export default app;
 // Start local server when not on Vercel
 if (!process.env.VERCEL) {
   app.listen(PORT, () => {
-    console.log(`FlowPilot AI backend server running on port ${PORT}`);
+    console.log(`Orvicc backend server running on port ${PORT}`);
   });
 }

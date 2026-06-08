@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Brain, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 interface Props {
@@ -55,7 +55,7 @@ const AuthScreen: React.FC<Props> = ({ onLogin, onRegister }) => {
             <Brain className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-primary">FlowPilot AI</h1>
+            <h1 className="text-lg font-semibold text-primary">Orvicc</h1>
             <p className="text-xs text-secondary">AI Browser Automation</p>
           </div>
         </div>
@@ -73,7 +73,7 @@ const AuthScreen: React.FC<Props> = ({ onLogin, onRegister }) => {
         </h2>
         <p className="text-xs text-secondary mb-6 text-center">
           {mode === 'login'
-            ? 'Sign in to use FlowPilot AI'
+            ? 'Sign in to use Orvicc'
             : 'Sign up free — 50 automations/month included'}
         </p>
 

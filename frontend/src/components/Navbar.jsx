@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Brain, Menu, X } from 'lucide-react'
@@ -20,7 +20,7 @@ export default function Navbar() {
           <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
             <Brain className="w-5 h-5 text-white" />
           </div>
-          <span className="text-white font-bold text-lg">FlowPilot AI</span>
+          <span className="text-white font-bold text-lg">Orvicc</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-6">

@@ -1,7 +1,7 @@
 {
-  "name": "flowpilot-ai-backend",
+  "name": "orvicc-backend",
   "version": "1.0.0",
-  "description": "Backend API for FlowPilot AI browser automation platform",
+  "description": "Backend API for Orvicc browser automation platform",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

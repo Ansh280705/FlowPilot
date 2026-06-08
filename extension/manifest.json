@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "FlowPilot AI",
+  "name": "Orvicc",
   "version": "1.0.0",
   "description": "AI-powered browser automation agent that understands natural language and executes repetitive workflows",
   "permissions": [
@@ -16,8 +16,9 @@
   "externally_connectable": {
     "matches": [
       "*://localhost/*",
-      "https://flowpilot.ai/*",
-      "https://*.flowpilot.ai/*"
+      "https://Orvicc.ai/*",
+      "https://*.Orvicc.ai/*",
+      "https://frontend-gules-six-c66710xx78.vercel.app/*"
     ]
   },
   "background": {

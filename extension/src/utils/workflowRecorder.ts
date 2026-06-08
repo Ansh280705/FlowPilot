@@ -1,4 +1,4 @@
-import { SelectorEngine } from './selectorEngine';
+﻿import { SelectorEngine } from './selectorEngine';
 import type { WorkflowStep } from '../types/workflow';
 
 export class WorkflowRecorder {
@@ -138,14 +138,14 @@ export class WorkflowRecorder {
 
   private isValidTarget(target: HTMLElement): boolean {
     // Ignore elements that are part of the extension UI
-    if (target.closest('[data-flowpilot-ui]')) return false;
+    if (target.closest('[data-Orvicc-ui]')) return false;
     
     // Ignore hidden elements
     const rect = target.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return false;
     
     // Ignore elements with certain classes
-    if (target.classList.contains('flowpilot-ignore')) return false;
+    if (target.classList.contains('Orvicc-ignore')) return false;
 
     return true;
   }

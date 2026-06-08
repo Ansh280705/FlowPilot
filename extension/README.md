@@ -1,6 +1,6 @@
-# FlowPilot AI Extension
+﻿# Orvicc Extension
 
-Chrome Extension component of FlowPilot AI - an AI-powered browser automation platform.
+Chrome Extension component of Orvicc - an AI-powered browser automation platform.
 
 ## Development
 

@@ -1,6 +1,6 @@
-# FlowPilot AI Setup Script for Windows
+﻿# Orvicc Setup Script for Windows
 
-Write-Host "🚀 Setting up FlowPilot AI..." -ForegroundColor Green
+Write-Host "🚀 Setting up Orvicc..." -ForegroundColor Green
 
 # Check if Node.js is installed
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
