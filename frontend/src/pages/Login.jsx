@@ -30,7 +30,7 @@ export default function Login() {
     <div className="min-h-screen pt-16 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/favicon.png" alt="Orvicc Logo" className="w-12 h-12 object-contain mx-auto mb-4" />
+          <img src="/favicon.png" alt="Orvicc Logo" className="w-16 h-16 object-contain mx-auto mb-4 filter drop-shadow-[0_0_10px_rgba(140,145,180,0.4)]" />
           <h1 className="text-2xl font-bold text-white">Welcome back</h1>
           <p className="text-slate-400 mt-1">Sign in to your Orvicc account</p>
         </div>

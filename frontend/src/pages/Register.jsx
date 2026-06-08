@@ -40,7 +40,7 @@ export default function Register() {
     <div className="min-h-screen pt-16 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/favicon.png" alt="Orvicc Logo" className="w-12 h-12 object-contain mx-auto mb-4" />
+          <img src="/favicon.png" alt="Orvicc Logo" className="w-16 h-16 object-contain mx-auto mb-4 filter drop-shadow-[0_0_10px_rgba(140,145,180,0.4)]" />
           <h1 className="text-2xl font-bold text-white">Create your account</h1>
           {plan !== 'free' && (
             <div className="mt-2 inline-flex items-center gap-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1 text-indigo-400 text-xs">
