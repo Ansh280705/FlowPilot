@@ -1,6 +1,22 @@
 import type { Message, Response, Workflow, WorkflowExecution, AIRequest } from '../types/workflow';
 
-const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:3001/api';
+const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:3002/api';
+const TOKEN_KEY = 'fp_token';
+
+/** Get stored JWT from chrome.storage.local */
+async function getToken(): Promise<string | null> {
+  return new Promise(resolve => {
+    chrome.storage.local.get([TOKEN_KEY], result => resolve(result[TOKEN_KEY] ?? null));
+  });
+}
+
+/** Build fetch headers with auth token if available */
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = await getToken();
+  return token
+    ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+    : { 'Content-Type': 'application/json' };
+}
 
 let currentExecution: WorkflowExecution | null = null;
 
@@ -41,6 +57,11 @@ async function handleMessage(message: Message, _sender: any): Promise<Response> 
       return stopRecording();
     case 'GET_EXECUTIONS':
       return getExecutions();
+    // Sent by the website after login/logout to sync auth state
+    case 'SET_AUTH_TOKEN':
+    case 'CLEAR_AUTH_TOKEN':
+      // These are handled by onMessageExternal — ignore if received internally
+      return { success: true };
     default:
       return { success: false, error: 'Unknown message type' };
   }
@@ -71,7 +92,7 @@ function sendToTab(tabId: number, message: object): Promise<any> {
 
 async function getWorkflows(): Promise<Response> {
   try {
-    const response = await fetch(`${BACKEND_API_URL}/workflows`);
+    const response = await fetch(`${BACKEND_API_URL}/workflows`, { headers: await authHeaders() });
     if (!response.ok) throw new Error(`Server error: ${response.status}`);
     const workflows = await response.json();
     return { success: true, workflows: Array.isArray(workflows) ? workflows : [] };
@@ -85,7 +106,7 @@ async function saveWorkflow(workflow: Workflow): Promise<Response> {
   try {
     const response = await fetch(`${BACKEND_API_URL}/workflows`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await authHeaders(),
       body: JSON.stringify(workflow),
     });
     if (!response.ok) throw new Error(`Server error: ${response.status}`);
@@ -98,7 +119,10 @@ async function saveWorkflow(workflow: Workflow): Promise<Response> {
 
 async function deleteWorkflow(workflowId: string): Promise<Response> {
   try {
-    await fetch(`${BACKEND_API_URL}/workflows/${workflowId}`, { method: 'DELETE' });
+    await fetch(`${BACKEND_API_URL}/workflows/${workflowId}`, {
+      method: 'DELETE',
+      headers: await authHeaders(),
+    });
     return { success: true };
   } catch (error) {
     return { success: false, error: (error as Error).message };
@@ -115,14 +139,23 @@ async function executePrompt(prompt: string): Promise<Response> {
     const pageContext = await analyzePage(tab.id);
     if (!pageContext.success) return pageContext;
 
+    // Only send interactive elements to keep the payload under the server limit
+    const ctx = pageContext.pageContext;
+    const trimmedContext = ctx ? {
+      ...ctx,
+      elements: (ctx.elements ?? [])
+        .filter((el: any) => el.type === 'input' || el.type === 'button' || el.type === 'select' || el.type === 'link')
+        .slice(0, 50),
+    } : undefined;
+
     const aiRequest: AIRequest = {
       prompt,
-      pageContext: pageContext.pageContext,
+      pageContext: trimmedContext,
     };
 
     const aiResponse = await fetch(`${BACKEND_API_URL}/ai/generate-workflow`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await authHeaders(),
       body: JSON.stringify(aiRequest),
     });
 
@@ -237,7 +270,7 @@ async function executeWorkflow(
     try {
       await fetch(`${BACKEND_API_URL}/executions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify(execution),
       });
     } catch {
@@ -320,7 +353,7 @@ async function stopRecording(): Promise<Response> {
 
 async function getExecutions(): Promise<Response> {
   try {
-    const response = await fetch(`${BACKEND_API_URL}/executions`);
+    const response = await fetch(`${BACKEND_API_URL}/executions`, { headers: await authHeaders() });
     if (!response.ok) throw new Error(`Server error: ${response.status}`);
     const executions = await response.json();
     return { success: true, executions: Array.isArray(executions) ? executions : [] };
@@ -333,3 +366,31 @@ async function getExecutions(): Promise<Response> {
 chrome.runtime.onInstalled.addListener(() => {
   console.log('FlowPilot AI extension installed');
 });
+
+// Handle messages sent from the FlowPilot website (externally_connectable)
+chrome.runtime.onMessageExternal.addListener(
+  (message: Message, _sender, sendResponse) => {
+    console.log('External message received:', message.type);
+
+    if (message.type === 'SET_AUTH_TOKEN' && message.token) {
+      chrome.storage.local.set(
+        { fp_token: message.token, fp_user: message.user ?? null },
+        () => {
+          console.log('Token stored from website login');
+          sendResponse({ success: true });
+        }
+      );
+      return true; // async
+    }
+
+    if (message.type === 'CLEAR_AUTH_TOKEN') {
+      chrome.storage.local.remove(['fp_token', 'fp_user'], () => {
+        console.log('Token cleared from website logout');
+        sendResponse({ success: true });
+      });
+      return true;
+    }
+
+    sendResponse({ success: false, error: 'Unknown external message type' });
+  }
+);

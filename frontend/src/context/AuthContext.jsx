@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import axios from 'axios'
+import { syncLoginToExtension, syncLogoutToExtension } from '../utils/extensionSync'
 
 const AuthContext = createContext(null)
 
@@ -12,7 +13,11 @@ export function AuthProvider({ children }) {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
       axios.get('/api/auth/me')
-        .then(res => setUser(res.data))
+        .then(res => {
+          setUser(res.data)
+          // Re-sync to extension on page load in case extension was reloaded
+          syncLoginToExtension(token, res.data)
+        })
         .catch(() => {
           localStorage.removeItem('fp_token')
           delete axios.defaults.headers.common['Authorization']
@@ -25,26 +30,29 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await axios.post('/api/auth/login', { email, password })
-    const { token, user } = res.data
+    const { token, user: u } = res.data
     localStorage.setItem('fp_token', token)
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-    setUser(user)
-    return user
+    setUser(u)
+    syncLoginToExtension(token, u)   // ← push to extension
+    return u
   }
 
   const register = async (email, password, name, plan) => {
     const res = await axios.post('/api/auth/register', { email, password, name, plan })
-    const { token, user } = res.data
+    const { token, user: u } = res.data
     localStorage.setItem('fp_token', token)
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-    setUser(user)
-    return user
+    setUser(u)
+    syncLoginToExtension(token, u)   // ← push to extension
+    return u
   }
 
   const logout = () => {
     localStorage.removeItem('fp_token')
     delete axios.defaults.headers.common['Authorization']
     setUser(null)
+    syncLogoutToExtension()          // ← clear from extension
   }
 
   const refreshUser = async () => {

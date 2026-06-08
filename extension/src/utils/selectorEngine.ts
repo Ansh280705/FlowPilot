@@ -98,7 +98,7 @@ export class SelectorEngine {
 
   public generateSelector(el: HTMLElement): string {
     if (el.id) {
-      return `#${el.id}`;
+      return `#${CSS.escape(el.id)}`;
     }
 
     const path: string[] = [];
@@ -106,17 +106,29 @@ export class SelectorEngine {
 
     while (current && current !== document.body) {
       let selector = current.tagName.toLowerCase();
-      
+
       if (current.id) {
-        selector += `#${current.id}`;
+        selector += `#${CSS.escape(current.id)}`;
         path.unshift(selector);
         break;
       }
 
-      if (current.className) {
-        const classes = current.className.split(' ').filter(c => c);
-        if (classes.length > 0) {
-          selector += `.${classes[0]}`;
+      // Skip Tailwind utility classes — they contain ':', '/', '[', ']'
+      // Only use classes that look like stable component/BEM identifiers
+      if (current.className && typeof current.className === 'string') {
+        const safeClass = current.className
+          .split(' ')
+          .map(c => c.trim())
+          .find(c =>
+            c.length > 0 &&
+            !c.includes(':') &&
+            !c.includes('/') &&
+            !c.includes('[') &&
+            !c.includes(']') &&
+            !c.includes('(')
+          );
+        if (safeClass) {
+          selector += `.${CSS.escape(safeClass)}`;
         }
       }
 

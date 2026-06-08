@@ -13,6 +13,13 @@
   "host_permissions": [
     "<all_urls>"
   ],
+  "externally_connectable": {
+    "matches": [
+      "*://localhost/*",
+      "https://flowpilot.ai/*",
+      "https://*.flowpilot.ai/*"
+    ]
+  },
   "background": {
     "service_worker": "src/background/index.ts",
     "type": "module"

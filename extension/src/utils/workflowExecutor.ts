@@ -272,19 +272,28 @@ export class WorkflowExecutor {
   }
 
   private findElement(target: string, selector?: string): any {
-    // 1. Try the explicit CSS selector first
+    // 1. Try the explicit CSS selector first — wrap in try/catch for invalid selectors
     if (selector) {
-      const element = document.querySelector(selector);
-      if (element) {
-        return { selector, element, type: 'css', confidence: 1 };
-      }
-      // Self-healing fallback
-      const altSelector = this.selectorEngine.findAlternativeSelector(selector);
-      if (altSelector) {
-        const altElement = document.querySelector(altSelector);
-        if (altElement) {
-          return { selector: altSelector, element: altElement, type: 'css', confidence: 0.8 };
+      try {
+        const element = document.querySelector(selector);
+        if (element) {
+          return { selector, element, type: 'css', confidence: 1 };
         }
+      } catch {
+        // Invalid selector (e.g. Tailwind classes with colons) — fall through
+      }
+
+      // Self-healing fallback
+      try {
+        const altSelector = this.selectorEngine.findAlternativeSelector(selector);
+        if (altSelector) {
+          const altElement = document.querySelector(altSelector);
+          if (altElement) {
+            return { selector: altSelector, element: altElement, type: 'css', confidence: 0.8 };
+          }
+        }
+      } catch {
+        // ignore
       }
     }
 

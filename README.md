@@ -141,7 +141,7 @@ npm run dev
 ```bash
 cd frontend
 npm run dev
-# → http://localhost:5173
+# → http://localhost:
 ```
 
 ### 7. Build and load the extension

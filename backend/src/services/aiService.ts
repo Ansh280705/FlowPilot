@@ -106,13 +106,15 @@ Example — user says "fill name as Rahul, phone 919876543210, date 06/15/2026 1
       prompt += `Page: ${request.pageContext.title} (${request.pageContext.url})\n\n`;
 
       if (request.pageContext.elements && request.pageContext.elements.length > 0) {
+        // Cap at 40 elements and truncate long text to keep payload small
+        const elements = request.pageContext.elements.slice(0, 40);
         prompt += `EXACT page elements (use these to pick selectors and targets):\n`;
-        request.pageContext.elements.slice(0, 60).forEach((el, i) => {
+        elements.forEach((el, i) => {
           const parts: string[] = [`${i + 1}. [${el.type}]`];
-          if (el.placeholder) parts.push(`placeholder="${el.placeholder}"`);
-          if (el.label)       parts.push(`label="${el.label}"`);
-          if (el.ariaLabel)   parts.push(`aria-label="${el.ariaLabel}"`);
-          if (el.text)        parts.push(`text="${el.text.slice(0, 60)}"`);
+          if (el.placeholder) parts.push(`placeholder="${el.placeholder.slice(0, 40)}"`);
+          if (el.label)       parts.push(`label="${el.label.slice(0, 40)}"`);
+          if (el.ariaLabel)   parts.push(`aria-label="${el.ariaLabel.slice(0, 40)}"`);
+          if (el.text)        parts.push(`text="${el.text.slice(0, 40)}"`);
           if (el.id)          parts.push(`id="${el.id}"`);
           if (el.name)        parts.push(`name="${el.name}"`);
           if (el.selector)    parts.push(`selector="${el.selector}"`);
