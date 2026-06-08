@@ -109,7 +109,7 @@ Example — user says "fill name as Rahul, phone 919876543210, date 06/15/2026 1
         // Cap at 40 elements and truncate long text to keep payload small
         const elements = request.pageContext.elements.slice(0, 40);
         prompt += `EXACT page elements (use these to pick selectors and targets):\n`;
-        elements.forEach((el, _i: number) => {
+        elements.forEach((el: Record<string, any>, _i: number) => {
           const parts: string[] = [`${_i + 1}. [${el.type}]`];
           if (el.placeholder) parts.push(`placeholder="${el.placeholder.slice(0, 40)}"`);
           if (el.label)       parts.push(`label="${el.label.slice(0, 40)}"`);
