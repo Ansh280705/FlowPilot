@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { Brain, Eye, EyeOff, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 interface Props {
   onLogin: (email: string, password: string) => Promise<unknown>;
@@ -51,9 +51,7 @@ const AuthScreen: React.FC<Props> = ({ onLogin, onRegister }) => {
       {/* Header */}
       <div className="bg-surface border-b border-surface2 p-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <Brain className="w-5 h-5 text-white" />
-          </div>
+          <img src="/public/icon48.png" alt="Orvicc Logo" className="w-9 h-9 object-contain filter drop-shadow-[0_0_6px_rgba(140,145,180,0.45)]" />
           <div>
             <h1 className="text-lg font-semibold text-primary">Orvicc</h1>
             <p className="text-xs text-secondary">AI Browser Automation</p>
@@ -64,9 +62,7 @@ const AuthScreen: React.FC<Props> = ({ onLogin, onRegister }) => {
       {/* Body */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         {/* Icon */}
-        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg">
-          <Brain className="w-9 h-9 text-white" />
-        </div>
+        <img src="/public/icon128.png" alt="Orvicc Logo" className="w-16 h-16 object-contain mb-5 filter drop-shadow-[0_0_10px_rgba(140,145,180,0.4)]" />
 
         <h2 className="text-xl font-bold text-primary mb-1">
           {mode === 'login' ? 'Welcome back' : 'Create account'}

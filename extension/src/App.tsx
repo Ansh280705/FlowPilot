@@ -1,5 +1,5 @@
-﻿import { useState, useEffect } from 'react';
-import { Brain, Play, Square, History, Save, Sparkles, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Play, Square, History, Save, Sparkles, LogOut } from 'lucide-react';
 import PromptInput from './components/PromptInput';
 import WorkflowList from './components/WorkflowList';
 import ExecutionLogs from './components/ExecutionLogs';
@@ -32,9 +32,7 @@ function App() {
     return (
       <div className="w-[400px] h-[600px] bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-            <Brain className="w-6 h-6 text-white" />
-          </div>
+          <img src="/public/icon128.png" alt="Orvicc Logo" className="w-12 h-12 object-contain filter drop-shadow-[0_0_10px_rgba(140,145,180,0.4)]" />
           <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
@@ -136,9 +134,7 @@ function App() {
       <div className="bg-surface border-b border-surface2 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <Brain className="w-5 h-5 text-white" />
-            </div>
+            <img src="/public/icon48.png" alt="Orvicc Logo" className="w-9 h-9 object-contain filter drop-shadow-[0_0_6px_rgba(140,145,180,0.45)]" />
             <div>
               <h1 className="text-lg font-semibold text-primary">Orvicc</h1>
               <p className="text-xs text-secondary">AI Browser Automation</p>

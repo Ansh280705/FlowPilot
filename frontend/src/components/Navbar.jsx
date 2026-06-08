@@ -17,7 +17,7 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0f0f17]/80 backdrop-blur-md border-b border-white/10">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/favicon.png" alt="Orvicc Logo" className="w-9 h-9 object-contain filter drop-shadow-[0_0_6px_rgba(140,145,180,0.45)]" />
+          <img src="/favicon.png" alt="Orvicc Logo" className="w-10 h-10 object-contain filter drop-shadow-[0_0_6px_rgba(140,145,180,0.45)]" />
           <span className="text-white font-bold text-lg">Orvicc</span>
         </Link>
 
