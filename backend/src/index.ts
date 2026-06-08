@@ -7,7 +7,10 @@ import documentRoutes from './routes/documents';
 import aiRoutes from './routes/ai';
 import authRoutes from './routes/auth';
 
-dotenv.config();
+// Only load .env file in local development — Vercel injects env vars directly
+if (!process.env.VERCEL) {
+  dotenv.config();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;

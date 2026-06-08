@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import Groq from 'groq-sdk';
 import type { AIRequest, AIResponse, WorkflowStep } from '../../../shared/types/workflow';
 
