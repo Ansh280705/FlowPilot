@@ -43,6 +43,9 @@ export class WorkflowExecutor {
         case 'navigate':
           return await this.navigate(processedValue);
         
+        case 'paste':
+          return await this.paste(processedValue, step);
+        
         case 'pressKey':
           return await this.pressKey(processedValue, step);
         
@@ -432,5 +435,25 @@ export class WorkflowExecutor {
     }
 
     throw new Error(`Element not visible within timeout: ${target}`);
+  }
+
+  private async paste(value: string, step: WorkflowStep): Promise<void> {
+    if (step.target) {
+      const element = await this.waitForTargetElement(step.target, step);
+      element.focus();
+    }
+
+    const activeEl = document.activeElement || document.body;
+    const clipboardData = new DataTransfer();
+    clipboardData.setData('text/plain', value);
+
+    const pasteEvent = new ClipboardEvent('paste', {
+      bubbles: true,
+      cancelable: true,
+      clipboardData: clipboardData
+    });
+    activeEl.dispatchEvent(pasteEvent);
+
+    await this.wait(step.waitTime || 500);
   }
 }
