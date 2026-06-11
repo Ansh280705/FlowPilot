@@ -1,4 +1,5 @@
 import type { SelectorMatch, PageElement } from '../types/workflow';
+import { truncate } from './domStrings';
 
 export class SelectorEngine {
   findElement(target: string, context?: PageElement[]): SelectorMatch | null {
@@ -38,13 +39,13 @@ export class SelectorEngine {
         elements.push({
           type: this.getElementType(htmlEl),
           selector: this.generateSelector(htmlEl),
-          text: htmlEl.textContent?.trim().substring(0, 100) || '',
-          placeholder: (htmlEl as any).placeholder?.substring(0, 50) || '',
+          text: truncate(htmlEl.textContent?.trim(), 100),
+          placeholder: truncate((htmlEl as HTMLInputElement).placeholder, 50),
           label: '',
-          ariaLabel: htmlEl.getAttribute('aria-label')?.substring(0, 50) || '',
-          id: htmlEl.id?.substring(0, 50) || '',
-          name: (htmlEl as any).name?.substring(0, 50) || '',
-          className: htmlEl.className?.substring(0, 100) || '',
+          ariaLabel: truncate(htmlEl.getAttribute('aria-label'), 50),
+          id: truncate(htmlEl.id, 50),
+          name: truncate((htmlEl as HTMLInputElement).name, 50),
+          className: truncate(htmlEl.className, 100),
           visible: isVisible,
           clickable: this.isClickable(htmlEl),
         });

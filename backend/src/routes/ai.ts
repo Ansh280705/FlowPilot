@@ -1,9 +1,21 @@
 import express from 'express';
 import { AIService } from '../services/aiService';
+import { groqKeyPool } from '../services/groqKeyPool';
 import type { AIRequest } from '../types/workflow';
 
 const router = express.Router();
 const aiService = new AIService();
+
+router.get('/status', (_req, res) => {
+  const pool = groqKeyPool.status();
+  res.json({
+    configured: pool.total > 0,
+    keys: pool.total,
+    available: pool.available,
+    cooling: pool.cooling,
+    msUntilAvailable: groqKeyPool.msUntilAvailable(),
+  });
+});
 
 // Generate workflow from prompt
 router.post('/generate-workflow', async (req, res) => {
@@ -18,7 +30,9 @@ router.post('/generate-workflow', async (req, res) => {
     res.json(response);
   } catch (error) {
     console.error('Error generating workflow:', error);
-    res.status(500).json({ error: 'Failed to generate workflow' });
+    const message = error instanceof Error ? error.message : 'Failed to generate workflow';
+    const status = message.includes('rate limit') ? 429 : 500;
+    res.status(status).json({ error: message });
   }
 });
 

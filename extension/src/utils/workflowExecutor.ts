@@ -72,55 +72,37 @@ export class WorkflowExecutor {
   }
 
   private async click(target: string, step: WorkflowStep): Promise<void> {
-    const match = this.findElement(target, step.selector);
-    if (!match || !match.element) {
-      throw new Error(`Element not found: ${target}`);
-    }
-
-    const element = match.element as HTMLElement;
-    
-    // Wait for element to be clickable
-    await this.waitForElement(element);
-    
-    // Scroll element into view
-    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    await this.wait(200);
-
-    // Click the element
+    const element = await this.waitForTargetElement(target, step);
+    element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+    element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
     element.click();
     await this.wait(step.waitTime || 500);
   }
 
   private async type(target: string, value: string, step: WorkflowStep): Promise<void> {
-    const match = this.findElement(target, step.selector);
-    if (!match || !match.element) {
-      throw new Error(`Element not found: ${target}`);
-    }
-
-    const element = match.element as HTMLInputElement | HTMLTextAreaElement;
-
-    // Wait for element to be editable
-    await this.waitForElement(element);
+    const element = await this.waitForTargetElement(target, step) as HTMLInputElement | HTMLTextAreaElement;
 
     // Focus element
     element.focus();
     await this.wait(100);
 
-    // Use React's internal setter if available (handles controlled components)
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-      element instanceof HTMLTextAreaElement
-        ? window.HTMLTextAreaElement.prototype
-        : window.HTMLInputElement.prototype,
-      'value'
-    )?.set;
+    // Use React's internal setter to bypass controlled component tracking
+    // Must get descriptor from the actual prototype of the element instance
+    const proto = element instanceof HTMLTextAreaElement
+      ? window.HTMLTextAreaElement.prototype
+      : window.HTMLInputElement.prototype;
 
-    if (nativeInputValueSetter) {
-      nativeInputValueSetter.call(element, value);
+    // Only use native setter if the element actually inherits from that prototype
+    const nativeValueSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+    const isCorrectProto = element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement;
+
+    if (nativeValueSetter && isCorrectProto) {
+      nativeValueSetter.call(element, value);
     } else {
-      element.value = value;
+      (element as HTMLInputElement).value = value;
     }
 
-    // Fire all events frameworks listen to
+    // Fire all events frameworks (React, Vue, Angular) listen to
     element.dispatchEvent(new Event('input',  { bubbles: true }));
     element.dispatchEvent(new Event('change', { bubbles: true }));
     element.dispatchEvent(new KeyboardEvent('keydown',  { bubbles: true }));
@@ -271,11 +253,38 @@ export class WorkflowExecutor {
     }
   }
 
-  private findElement(target: string, selector?: string): any {
+  private findElement(target: string, selector?: string, visibleOnly = false): any {
+    const pickVisible = (element: Element | null) => {
+      if (!element) return null;
+      const htmlEl = element as HTMLElement;
+      if (visibleOnly && !this.isElementVisible(htmlEl)) return null;
+      return htmlEl;
+    };
+
+    // Text match on visible menu items / links (critical for GitHub dropdowns)
+    const textMatch = this.findByVisibleText(target);
+    if (textMatch) {
+      return {
+        selector: this.selectorEngine.generateSelector(textMatch),
+        element: textMatch,
+        type: 'text',
+        confidence: 0.95,
+      };
+    }
+
+    // Known high-confidence selectors for common flows
+    for (const knownSelector of this.getKnownSelectors(target)) {
+      const element = this.queryFirstVisible(knownSelector);
+      if (element) {
+        return { selector: knownSelector, element, type: 'css', confidence: 1 };
+      }
+    }
+
     // 1. Try the explicit CSS selector first — wrap in try/catch for invalid selectors
     if (selector) {
       try {
-        const element = document.querySelector(selector);
+        const matches = Array.from(document.querySelectorAll(selector));
+        const element = pickVisible(matches.find(el => this.isElementVisible(el as HTMLElement)) ?? matches[0] ?? null);
         if (element) {
           return { selector, element, type: 'css', confidence: 1 };
         }
@@ -287,9 +296,9 @@ export class WorkflowExecutor {
       try {
         const altSelector = this.selectorEngine.findAlternativeSelector(selector);
         if (altSelector) {
-          const altElement = document.querySelector(altSelector);
-          if (altElement) {
-            return { selector: altSelector, element: altElement, type: 'css', confidence: 0.8 };
+          const element = pickVisible(document.querySelector(altSelector));
+          if (element) {
+            return { selector: altSelector, element, type: 'css', confidence: 0.8 };
           }
         }
       } catch {
@@ -299,22 +308,25 @@ export class WorkflowExecutor {
 
     // 2. Try the selectorEngine (text/placeholder/aria/label matching)
     const engineMatch = this.selectorEngine.findElement(target);
-    if (engineMatch) return engineMatch;
+    if (engineMatch?.element && (!visibleOnly || this.isElementVisible(engineMatch.element as HTMLElement))) {
+      return engineMatch;
+    }
 
     // 3. Broad fuzzy fallback — scan all inputs/buttons directly
     const needle = target.toLowerCase().replace(/[^a-z0-9]/g, '');
     const candidates = Array.from(
-      document.querySelectorAll('input, textarea, select, button, [role="button"]')
+      document.querySelectorAll('a, input, textarea, select, button, [role="button"], [role="menuitem"], [role="textbox"]')
     ) as HTMLElement[];
 
     for (const el of candidates) {
+      if (visibleOnly && !this.isElementVisible(el)) continue;
+
       const attrs = [
         (el as HTMLInputElement).placeholder,
         el.getAttribute('aria-label'),
         el.getAttribute('name'),
         el.id,
         el.textContent,
-        // associated label
         el.id ? document.querySelector(`label[for="${el.id}"]`)?.textContent : '',
       ];
       for (const attr of attrs) {
@@ -334,19 +346,91 @@ export class WorkflowExecutor {
     return null;
   }
 
-  private async waitForElement(element: HTMLElement, timeout = 10000): Promise<void> {
-    const startTime = Date.now();
-    
-    while (Date.now() - startTime < timeout) {
-      const rect = element.getBoundingClientRect();
-      const isVisible = rect.width > 0 && rect.height > 0 && 
-                        element.offsetParent !== null;
-      
-      if (isVisible) return;
-      
-      await this.wait(100);
+  private getKnownSelectors(target: string): string[] {
+    const t = target.toLowerCase();
+    if (t.includes('repository name') || t === 'repository name') {
+      return ['#repository_name', 'input[name="repository[name]"]', '[data-testid="repository-name-input"]'];
     }
-    
-    throw new Error('Element not visible within timeout');
+    if (t.includes('create repository')) {
+      return [
+        'button[data-testid="create-repository-button"]',
+        'form button[type="submit"]',
+        '.js-repo-create-submit',
+      ];
+    }
+    if (t === 'new' || t.includes('new menu')) {
+      return ['[aria-label="Create something new"]', '[data-testid="create-menu-button"]'];
+    }
+    if (t.includes('new repository')) {
+      return [
+        '[data-testid="create-new-repository"]',
+        'a[href="/new"]',
+        'a[href*="/new"]',
+        '[role="menuitem"] a[href="/new"]',
+      ];
+    }
+    return [];
+  }
+
+  private queryFirstVisible(selector: string): HTMLElement | null {
+    const matches = Array.from(document.querySelectorAll(selector));
+    for (const el of matches) {
+      if (this.isElementVisible(el as HTMLElement)) return el as HTMLElement;
+    }
+    return null;
+  }
+
+  private findByVisibleText(target: string): HTMLElement | null {
+    const normalized = target.toLowerCase().trim().replace(/\s+/g, ' ');
+    if (!normalized) return null;
+
+    const candidates = Array.from(
+      document.querySelectorAll('a, button, [role="menuitem"], [role="button"], [role="link"]')
+    );
+
+    for (const el of candidates) {
+      const text = el.textContent?.trim().toLowerCase().replace(/\s+/g, ' ') || '';
+      if (text !== normalized && !text.includes(normalized) && !normalized.includes(text)) continue;
+
+      const clickable = (el.closest('a, button, [role="menuitem"], [role="button"]') ?? el) as HTMLElement;
+      if (this.isElementVisible(clickable)) return clickable;
+    }
+
+    return null;
+  }
+
+  private isElementVisible(element: HTMLElement): boolean {
+    const rect = element.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return false;
+
+    const style = window.getComputedStyle(element);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+      return false;
+    }
+
+    // offsetParent is null for fixed/sticky elements — don't use as sole visibility signal
+    return true;
+  }
+
+  private async waitForTargetElement(target: string, step: WorkflowStep, timeout = 12000): Promise<HTMLElement> {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeout) {
+      const match = this.findElement(target, step.selector, true)
+        ?? this.findElement(target, step.selector, false);
+
+      if (match?.element) {
+        const element = match.element as HTMLElement;
+        if (this.isElementVisible(element)) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          await this.wait(200);
+          return element;
+        }
+      }
+
+      await this.wait(200);
+    }
+
+    throw new Error(`Element not visible within timeout: ${target}`);
   }
 }

@@ -1,16 +1,11 @@
-﻿import express from 'express';
+﻿import './loadEnv';
+import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import workflowRoutes from './routes/workflows';
 import executionRoutes from './routes/executions';
 import documentRoutes from './routes/documents';
 import aiRoutes from './routes/ai';
 import authRoutes from './routes/auth';
-
-// Only load .env file in local development — Vercel injects env vars directly
-if (!process.env.VERCEL) {
-  dotenv.config();
-}
 
 const app = express();
 const PORT = process.env.PORT || 3001;

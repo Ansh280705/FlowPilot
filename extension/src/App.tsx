@@ -27,6 +27,16 @@ function App() {
     }
   }, [user]);
 
+  useEffect(() => {
+    const onMessage = (message: { type?: string; execution?: WorkflowExecution }) => {
+      if (message.type === 'EXECUTION_UPDATE' && message.execution) {
+        setCurrentExecution(message.execution);
+      }
+    };
+    chrome.runtime.onMessage.addListener(onMessage);
+    return () => chrome.runtime.onMessage.removeListener(onMessage);
+  }, []);
+
   // ── Loading splash ──────────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -72,16 +82,28 @@ function App() {
   const handleExecute = async () => {
     if (!prompt.trim()) return;
     setIsExecuting(true);
+    setCurrentExecution({
+      id: 'pending',
+      workflowId: '',
+      status: 'running',
+      startedAt: new Date().toISOString(),
+      variables: {},
+      currentStep: 0,
+      logs: [{ timestamp: new Date().toISOString(), level: 'info', message: 'Starting automation...', step: 0 }],
+      retryCount: 0,
+      userId: 'default-user',
+    });
     try {
       const result = await sendMessageToBackground({ type: 'EXECUTE_PROMPT', prompt });
+      if (result.execution) setCurrentExecution(result.execution);
       if (result.success) {
-        setCurrentExecution(result.execution);
         await loadExecutions();
       } else {
-        alert(`Execution failed: ${result.error}`);
+        const errMsg = result.error || result.execution?.error || 'Unknown error — check execution logs';
+        alert(`Execution failed: ${errMsg}`);
       }
     } catch (error) {
-      alert(`Execution error: ${(error as Error).message}`);
+      alert(`Execution error: ${(error as Error).message || 'Could not reach extension background'}`);
     } finally {
       setIsExecuting(false);
     }
@@ -90,6 +112,7 @@ function App() {
   const handleStopExecution = async () => {
     await sendMessageToBackground({ type: 'STOP_EXECUTION' });
     setIsExecuting(false);
+    setCurrentExecution(prev => prev ? { ...prev, status: 'stopped' } : null);
   };
 
   const handleToggleRecording = async () => {

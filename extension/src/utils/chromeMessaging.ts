@@ -8,6 +8,7 @@ export type MessageType =
   | 'START_RECORDING'
   | 'STOP_RECORDING'
   | 'GET_EXECUTIONS'
+  | 'GET_CURRENT_EXECUTION'
   | 'ANALYZE_PAGE'
   | 'EXECUTE_STEP'
   | 'UPLOAD_DOCUMENT';
@@ -28,7 +29,7 @@ export const sendMessageToBackground = (message: Message): Promise<Response> => 
       if (chrome.runtime.lastError) {
         reject(chrome.runtime.lastError);
       } else {
-        resolve(response);
+        resolve(response ?? { success: false, error: 'No response from extension — try reloading the extension' });
       }
     });
   });

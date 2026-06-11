@@ -19,6 +19,26 @@ async function authHeaders(): Promise<Record<string, string>> {
 }
 
 let currentExecution: WorkflowExecution | null = null;
+let stopRequested = false;
+
+const AI_FETCH_TIMEOUT_MS = 45_000;
+const STEP_TIMEOUT_MS = 45_000;
+const TOTAL_TIMEOUT_MS = 180_000;
+const MAX_AGENT_ROUNDS = 20;
+
+function broadcastExecutionUpdate(execution: WorkflowExecution): void {
+  chrome.runtime.sendMessage({ type: 'EXECUTION_UPDATE', execution }).catch(() => {});
+}
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<globalThis.Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 console.log('Background script loaded');
 
@@ -57,6 +77,8 @@ async function handleMessage(message: Message, _sender: any): Promise<Response> 
       return stopRecording();
     case 'GET_EXECUTIONS':
       return getExecutions();
+    case 'GET_CURRENT_EXECUTION':
+      return { success: true, execution: currentExecution };
     // Sent by the website after login/logout to sync auth state
     case 'SET_AUTH_TOKEN':
     case 'CLEAR_AUTH_TOKEN':
@@ -86,6 +108,26 @@ function sendToTab(tabId: number, message: object): Promise<any> {
       }
     });
   });
+}
+
+/** Wait for navigation + SPA render before executing steps on a new page */
+async function waitForTabReady(tabId: number, timeoutMs = 15000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const tab = await chrome.tabs.get(tabId);
+    if (tab.status === 'complete') break;
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  while (Date.now() < deadline) {
+    const res = await sendToTab(tabId, { type: 'ANALYZE_PAGE' });
+    const count = res?.pageContext?.elements?.length ?? 0;
+    if (count > 3) return;
+    await new Promise(resolve => setTimeout(resolve, 400));
+  }
 }
 
 // ─── API calls ──────────────────────────────────────────────────────────────
@@ -136,57 +178,276 @@ async function executePrompt(prompt: string): Promise<Response> {
 
     await ensureContentScriptLoaded(tab.id);
 
-    const pageContext = await analyzePage(tab.id);
-    if (!pageContext.success) return pageContext;
+    const tabInfo = await chrome.tabs.get(tab.id);
+    const deadline = Date.now() + TOTAL_TIMEOUT_MS;
+    const isTimedOut = () => Date.now() > deadline;
 
-    // Only send interactive elements to keep the payload under the server limit
-    const ctx = pageContext.pageContext;
-    const trimmedContext = ctx ? {
-      ...ctx,
-      elements: (ctx.elements ?? [])
-        .filter((el: any) => el.type === 'input' || el.type === 'button' || el.type === 'select' || el.type === 'link')
-        .slice(0, 50),
-    } : undefined;
-
-    const aiRequest: AIRequest = {
-      prompt,
-      pageContext: trimmedContext,
+    const execution: WorkflowExecution = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      workflowId: '',
+      status: 'running',
+      startedAt: new Date().toISOString(),
+      variables: {},
+      currentStep: 0,
+      logs: [{
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        message: 'Starting automation...',
+        step: 0,
+      }],
+      retryCount: 0,
+      userId: 'default-user',
+      url: tabInfo.url,
     };
 
-    const aiResponse = await fetch(`${BACKEND_API_URL}/ai/generate-workflow`, {
+    stopRequested = false;
+    currentExecution = execution;
+    broadcastExecutionUpdate(execution);
+
+    const completedSteps: string[] = [];
+    let globalStepIndex = 0;
+    let pageJustNavigated = false;
+    let pageMenuOpened = false;
+
+    for (let round = 0; round < MAX_AGENT_ROUNDS; round++) {
+      if (stopRequested || isTimedOut()) break;
+
+      if (pageJustNavigated) {
+        execution.logs.push({
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: 'Waiting for page to load...',
+          step: globalStepIndex,
+        });
+        broadcastExecutionUpdate(execution);
+        await waitForTabReady(tab.id);
+        pageJustNavigated = false;
+      } else if (pageMenuOpened) {
+        execution.logs.push({
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: 'Waiting for menu...',
+          step: globalStepIndex,
+        });
+        broadcastExecutionUpdate(execution);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        pageMenuOpened = false;
+      }
+
+      await ensureContentScriptLoaded(tab.id);
+
+      execution.logs.push({
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        message: round === 0 ? 'Analyzing page...' : 'AI thinking about next action...',
+        step: globalStepIndex,
+      });
+      broadcastExecutionUpdate(execution);
+
+      const pageContext = await analyzePage(tab.id);
+      if (!pageContext.success) {
+        execution.status = 'failed';
+        execution.error = pageContext.error || 'Failed to analyze page';
+        broadcastExecutionUpdate(execution);
+        break;
+      }
+
+      let agentResult: AgentStepResult | null;
+      try {
+        agentResult = await fetchAgentStep(prompt, pageContext.pageContext, completedSteps);
+      } catch (error) {
+        execution.status = 'failed';
+        execution.error = (error as Error).message || 'AI planning failed';
+        broadcastExecutionUpdate(execution);
+        break;
+      }
+
+      if (!agentResult) {
+        execution.status = 'failed';
+        execution.error = 'AI service error or timeout — is the backend running on port 3002?';
+        broadcastExecutionUpdate(execution);
+        break;
+      }
+
+      if (agentResult.reasoning) {
+        execution.logs.push({
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: `AI: ${agentResult.reasoning}`,
+          step: globalStepIndex,
+        });
+        broadcastExecutionUpdate(execution);
+      }
+
+      if (agentResult.done || !agentResult.step) {
+        if (round === 0 && !agentResult.done) {
+          execution.status = 'failed';
+          execution.error = agentResult.reasoning || 'AI could not find a next action on this page.';
+        }
+        break;
+      }
+
+      const step = agentResult.step;
+      const urlAtRoundStart = (await chrome.tabs.get(tab.id)).url || '';
+
+      globalStepIndex++;
+      execution.currentStep = globalStepIndex;
+      if (step.retryCount == null) step.retryCount = 2;
+
+      try {
+        const result = await executeStep(tab.id, step, execution.variables);
+        const label = step.description || `${step.action} ${step.target || ''}`.trim();
+        completedSteps.push(label);
+        execution.logs.push({
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: `Step ${globalStepIndex}: ${label}`,
+          step: globalStepIndex - 1,
+          details: result,
+        });
+        broadcastExecutionUpdate(execution);
+
+        if (step.action === 'click' || step.action === 'navigate') {
+          const pollUntil = Date.now() + Math.max(step.waitTime || 800, 3500);
+          let urlChanged = false;
+          while (Date.now() < pollUntil) {
+            await new Promise(resolve => setTimeout(resolve, 250));
+            const currentUrl = (await chrome.tabs.get(tab.id)).url || '';
+            if (currentUrl !== urlAtRoundStart) {
+              urlChanged = true;
+              break;
+            }
+          }
+          if (urlChanged) {
+            pageJustNavigated = true;
+          } else {
+            pageMenuOpened = true;
+          }
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 400));
+        }
+      } catch (error) {
+        const errMsg = (error as Error).message || 'Unknown step error';
+        execution.logs.push({
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          message: `Step ${globalStepIndex} failed: ${errMsg}`,
+          step: globalStepIndex - 1,
+          details: errMsg,
+        });
+        execution.status = 'failed';
+        execution.error = errMsg;
+        broadcastExecutionUpdate(execution);
+        break;
+      }
+
+      if (execution.status === 'failed' || stopRequested || isTimedOut()) break;
+    }
+
+    if (isTimedOut() && execution.status === 'running') {
+      execution.status = 'failed';
+      execution.error = 'Automation timed out after 3 minutes';
+    }
+
+    if (stopRequested) {
+      execution.status = 'stopped';
+      execution.completedAt = new Date().toISOString();
+    } else if (execution.status === 'running') {
+      execution.status = completedSteps.length > 0 ? 'completed' : 'failed';
+      if (execution.status === 'failed' && !execution.error) {
+        execution.error = 'No steps were executed';
+      }
+      if (execution.status === 'completed') {
+        execution.completedAt = new Date().toISOString();
+      }
+    }
+
+    broadcastExecutionUpdate(execution);
+
+    try {
+      await fetchWithTimeout(`${BACKEND_API_URL}/executions`, {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: JSON.stringify(execution),
+      }, 10_000);
+    } catch {
+      // backend unavailable
+    }
+
+    currentExecution = null;
+    const succeeded = execution.status === 'completed' || execution.status === 'stopped';
+    return {
+      success: succeeded,
+      execution,
+      error: succeeded ? undefined : (execution.error || 'Automation failed'),
+    };
+  } catch (error) {
+    currentExecution = null;
+    const errMsg = (error as Error).message || 'Unexpected automation error';
+    return { success: false, error: errMsg };
+  }
+}
+
+interface AgentStepResult {
+  step: any | null;
+  reasoning: string;
+  done: boolean;
+}
+
+async function fetchAgentStep(
+  prompt: string,
+  pageContext: any,
+  completedSteps: string[]
+): Promise<AgentStepResult | null> {
+  const trimmedContext = pageContext ? {
+    ...pageContext,
+    elements: (pageContext.elements ?? [])
+      .filter((el: any) => el.type === 'input' || el.type === 'button' || el.type === 'select' || el.type === 'link')
+      .slice(0, 25),
+  } : undefined;
+
+  const aiRequest: AIRequest = {
+    prompt,
+    pageContext: trimmedContext,
+    mode: 'agent',
+    completedSteps,
+  };
+
+  let aiResponse: globalThis.Response;
+  try {
+    aiResponse = await fetchWithTimeout(`${BACKEND_API_URL}/ai/generate-workflow`, {
       method: 'POST',
       headers: await authHeaders(),
       body: JSON.stringify(aiRequest),
-    });
-
-    if (!aiResponse.ok) throw new Error(`AI service error: ${aiResponse.status}`);
-
-    const workflowData = await aiResponse.json();
-
-    // AI may return { workflow: [...] }, { steps: [...] }, or a bare array
-    const steps = workflowData?.workflow ?? workflowData?.steps ?? workflowData;
-    if (!Array.isArray(steps) || steps.length === 0) {
-      // Use the reasoning message if the AI returned one (e.g. not-automation detection)
-      const reason = workflowData?.reasoning || 'AI did not return any workflow steps. Try a more specific prompt.';
-      return { success: false, error: reason };
-    }
-
-    // Build a minimal Workflow object so executeWorkflow can run it
-    const workflow: Workflow = {
-      id: '',
-      name: prompt.slice(0, 60),
-      description: prompt,
-      steps,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      userId: 'default-user',
-      isPublic: false,
-    };
-
-    return await executeWorkflow(workflow, tab.id);
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
+    }, AI_FETCH_TIMEOUT_MS);
+  } catch {
+    return null;
   }
+
+  if (!aiResponse.ok) {
+    let errText = `AI service returned ${aiResponse.status}`;
+    try {
+      const errBody = await aiResponse.json();
+      if (errBody?.error) errText = errBody.error;
+    } catch { /* ignore */ }
+    throw new Error(errText);
+  }
+
+  const data = await aiResponse.json();
+  const steps: any[] = Array.isArray(data?.workflow) ? data.workflow : [];
+
+  if (steps.length === 0 && data?.reasoning) {
+    const reasoning = String(data.reasoning);
+    if (reasoning.includes('⚠️') || reasoning.toLowerCase().includes('cannot')) {
+      throw new Error(reasoning);
+    }
+  }
+
+  return {
+    step: steps[0] ?? null,
+    reasoning: data?.reasoning || '',
+    done: data?.done === true || (steps.length === 0 && !data?.reasoning?.includes('⚠️')),
+  };
 }
 
 async function runWorkflow(workflowId: string, variables: Record<string, string> = {}): Promise<Response> {
@@ -229,11 +490,12 @@ async function executeWorkflow(
       url: tabInfo.url,
     };
 
+    stopRequested = false;
     currentExecution = execution;
 
     const steps = workflow.steps || [];
     for (let i = 0; i < steps.length; i++) {
-      if (!currentExecution || currentExecution.status === 'stopped') break;
+      if (stopRequested) break;
 
       const step = steps[i];
       execution.currentStep = i + 1;
@@ -261,7 +523,10 @@ async function executeWorkflow(
       }
     }
 
-    if (execution.status === 'running') {
+    if (stopRequested) {
+      execution.status = 'stopped';
+      execution.completedAt = new Date().toISOString();
+    } else if (execution.status === 'running') {
       execution.status = 'completed';
       execution.completedAt = new Date().toISOString();
     }
@@ -285,10 +550,13 @@ async function executeWorkflow(
 }
 
 async function executeStep(tabId: number, step: any, variables: Record<string, string>): Promise<any> {
-  const response = await sendToTab(tabId, { type: 'EXECUTE_STEP', step, variables });
+  const response = await Promise.race([
+    sendToTab(tabId, { type: 'EXECUTE_STEP', step, variables }),
+    new Promise<null>(resolve => setTimeout(() => resolve(null), STEP_TIMEOUT_MS)),
+  ]);
 
   if (response === null) {
-    throw new Error('No response from content script — page may have navigated or crashed');
+    throw new Error('Step timed out — page may have navigated or the element was not found');
   }
   if (!response.success) {
     throw new Error(response.error || 'Step execution failed');
@@ -330,9 +598,9 @@ async function analyzePage(tabId: number): Promise<Response> {
 }
 
 async function stopExecution(): Promise<Response> {
+  stopRequested = true;
   if (currentExecution) {
     currentExecution.status = 'stopped';
-    currentExecution = null;
   }
   return { success: true };
 }

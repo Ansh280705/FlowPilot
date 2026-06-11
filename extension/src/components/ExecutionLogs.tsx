@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertCircle, Square } from 'lucide-react';
 import type { WorkflowExecution } from '../types/workflow';
 
 interface ExecutionLogsProps {
@@ -19,6 +19,8 @@ const ExecutionLogs: React.FC<ExecutionLogsProps> = ({ execution, executions, on
         return <Clock className="w-4 h-4 text-accent animate-spin" />;
       case 'paused':
         return <AlertCircle className="w-4 h-4 text-warning" />;
+      case 'stopped':
+        return <Square className="w-4 h-4 text-warning" />;
       default:
         return <Clock className="w-4 h-4 text-secondary" />;
     }
@@ -33,6 +35,7 @@ const ExecutionLogs: React.FC<ExecutionLogsProps> = ({ execution, executions, on
       case 'running':
         return 'text-accent';
       case 'paused':
+      case 'stopped':
         return 'text-warning';
       default:
         return 'text-secondary';
@@ -59,6 +62,7 @@ const ExecutionLogs: React.FC<ExecutionLogsProps> = ({ execution, executions, on
                 <span className={`ml-2 ${
                   log.level === 'error' ? 'text-error' :
                   log.level === 'warn' ? 'text-warning' :
+                  log.message.startsWith('AI:') ? 'text-accent italic' :
                   log.level === 'info' ? 'text-primary' :
                   'text-secondary'
                 }`}>

@@ -129,6 +129,8 @@ export interface AIRequest {
   pageContext?: PageContext;
   existingWorkflow?: Workflow;
   variables?: Record<string, string>;
+  mode?: 'agent' | 'workflow';
+  completedSteps?: string[];
 }
 
 export interface AIResponse {
@@ -136,6 +138,7 @@ export interface AIResponse {
   workflow: WorkflowStep[];
   reasoning?: string;
   confidence: number;
+  done?: boolean;
 }
 
 export interface DocumentUpload {

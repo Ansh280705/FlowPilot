@@ -1,4 +1,5 @@
 import type { PageContext, PageElement, FormInfo, TableInfo, ModalInfo } from '../types/workflow';
+import { truncate } from './domStrings';
 
 export class DOMAnalyzer {
   analyzePage(): PageContext {
@@ -75,11 +76,11 @@ export class DOMAnalyzer {
 
     const selector = this.generateSelector(element);
     const text = element.textContent?.trim() || '';
-    const placeholder = (element as any).placeholder || '';
+    const placeholder = truncate((element as HTMLInputElement).placeholder, 50);
     const ariaLabel = element.getAttribute('aria-label') || '';
     const id = element.id || '';
-    const name = (element as any).name || '';
-    const className = element.className || '';
+    const name = truncate((element as HTMLInputElement).name, 50);
+    const className = truncate(element.className, 100);
 
     // Find associated label
     let label = '';
@@ -90,6 +91,9 @@ export class DOMAnalyzer {
       }
     }
 
+    // Include current value so AI knows field is already filled
+    const currentValue = truncate((element as HTMLInputElement).value || '', 80);
+
     const isClickable = type === 'button' || type === 'link' || 
                        (element as any).tagName === 'A' || 
                        (element as any).tagName === 'BUTTON';
@@ -97,13 +101,14 @@ export class DOMAnalyzer {
     return {
       type,
       selector,
-      text: text.substring(0, 100),
-      placeholder: placeholder.substring(0, 50),
-      label: label.substring(0, 50),
-      ariaLabel: ariaLabel.substring(0, 50),
-      id: id.substring(0, 50),
-      name: name.substring(0, 50),
-      className: className.substring(0, 100),
+      // Show "value:xxx" if field has content so AI knows it's filled
+      text: currentValue ? `[filled: ${currentValue}]` : truncate(text, 100),
+      placeholder,
+      label: truncate(label, 50),
+      ariaLabel: truncate(ariaLabel, 50),
+      id: truncate(id, 50),
+      name,
+      className,
       visible: isVisible,
       clickable: isClickable,
     };
@@ -224,7 +229,7 @@ export class DOMAnalyzer {
         if (isOpen) {
           modals.push({
             selector: this.generateSelector(modalElement),
-            title: title.substring(0, 50),
+            title: truncate(title, 50),
             buttons,
             isOpen,
           });

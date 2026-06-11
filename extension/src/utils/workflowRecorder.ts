@@ -1,4 +1,5 @@
 ﻿import { SelectorEngine } from './selectorEngine';
+import { truncate } from './domStrings';
 import type { WorkflowStep } from '../types/workflow';
 
 export class WorkflowRecorder {
@@ -50,8 +51,8 @@ export class WorkflowRecorder {
     if (!this.isValidTarget(target)) return;
 
     const selector = this.selectorEngine.generateSelector(target);
-    const text = target.textContent?.trim().substring(0, 100) || '';
-    const ariaLabel = target.getAttribute('aria-label')?.substring(0, 50) || '';
+    const text = truncate(target.textContent?.trim(), 100);
+    const ariaLabel = truncate(target.getAttribute('aria-label'), 50);
 
     this.recordStep({
       id: crypto.randomUUID(),
@@ -70,7 +71,7 @@ export class WorkflowRecorder {
     if (!this.isValidTarget(target)) return;
 
     const selector = this.selectorEngine.generateSelector(target);
-    const placeholder = target.placeholder?.substring(0, 50) || '';
+    const placeholder = truncate(target.placeholder, 50);
     const label = this.findLabel(target);
     const value = target.value;
 
