@@ -79,41 +79,70 @@ export class WorkflowExecutor {
 
   private async click(target: string, step: WorkflowStep): Promise<void> {
     const element = await this.waitForTargetElement(target, step);
-    element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
-    element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
-    element.click();
+    const selector = this.selectorEngine.generateSelector(element);
+    
+    try {
+      await this.executeJavascript(`
+        const el = document.querySelector('${selector.replace(/'/g, "\\'")}');
+        if (el) {
+          el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+          el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+          el.click();
+        }
+      `, step);
+    } catch {
+      element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+      element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+      element.click();
+    }
     await this.wait(step.waitTime || 500);
   }
 
   private async type(target: string, value: string, step: WorkflowStep): Promise<void> {
     const element = await this.waitForTargetElement(target, step) as HTMLInputElement | HTMLTextAreaElement;
+    const selector = this.selectorEngine.generateSelector(element);
 
-    // Focus element
-    element.focus();
-    await this.wait(100);
+    try {
+      await this.executeJavascript(`
+        const el = document.querySelector('${selector.replace(/'/g, "\\'")}');
+        if (el) {
+          el.focus();
+          const proto = el instanceof HTMLTextAreaElement
+            ? window.HTMLTextAreaElement.prototype
+            : window.HTMLInputElement.prototype;
+          const nativeValueSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+          if (nativeValueSetter) {
+            nativeValueSetter.call(el, '${value.replace(/'/g, "\\'")}\');
+          } else {
+            el.value = '${value.replace(/'/g, "\\'")}\';
+          }
+          el.dispatchEvent(new Event('input',  { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+          el.dispatchEvent(new KeyboardEvent('keydown',  { bubbles: true }));
+          el.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true }));
+          el.dispatchEvent(new KeyboardEvent('keyup',    { bubbles: true }));
+        }
+      `, step);
+    } catch {
+      element.focus();
+      const proto = element instanceof HTMLTextAreaElement
+        ? window.HTMLTextAreaElement.prototype
+        : window.HTMLInputElement.prototype;
+      const nativeValueSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+      const isCorrectProto = element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement;
 
-    // Use React's internal setter to bypass controlled component tracking
-    // Must get descriptor from the actual prototype of the element instance
-    const proto = element instanceof HTMLTextAreaElement
-      ? window.HTMLTextAreaElement.prototype
-      : window.HTMLInputElement.prototype;
+      if (nativeValueSetter && isCorrectProto) {
+        nativeValueSetter.call(element, value);
+      } else {
+        (element as HTMLInputElement).value = value;
+      }
 
-    // Only use native setter if the element actually inherits from that prototype
-    const nativeValueSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
-    const isCorrectProto = element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement;
-
-    if (nativeValueSetter && isCorrectProto) {
-      nativeValueSetter.call(element, value);
-    } else {
-      (element as HTMLInputElement).value = value;
+      element.dispatchEvent(new Event('input',  { bubbles: true }));
+      element.dispatchEvent(new Event('change', { bubbles: true }));
+      element.dispatchEvent(new KeyboardEvent('keydown',  { bubbles: true }));
+      element.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true }));
+      element.dispatchEvent(new KeyboardEvent('keyup',    { bubbles: true }));
     }
-
-    // Fire all events frameworks (React, Vue, Angular) listen to
-    element.dispatchEvent(new Event('input',  { bubbles: true }));
-    element.dispatchEvent(new Event('change', { bubbles: true }));
-    element.dispatchEvent(new KeyboardEvent('keydown',  { bubbles: true }));
-    element.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true }));
-    element.dispatchEvent(new KeyboardEvent('keyup',    { bubbles: true }));
 
     await this.wait(step.waitTime || 200);
   }
