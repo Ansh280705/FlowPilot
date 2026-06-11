@@ -114,9 +114,10 @@ Return JSON: {"reasoning":"short reason","done":false,"workflow":[{"id":"s1","ac
 When goal complete: {"reasoning":"done","done":true,"workflow":[]}
 
 Rules:
+- Verify your current URL and page state. If the user prompt says "fill X" or "write Y in sheet" but you are on a dashboard, home, or listing page (e.g., docs.google.com/spreadsheets/u/0/), you must FIRST open a document/spreadsheet by clicking its template/card in the elements list (e.g., the "Blank" template or the target document). Do NOT attempt to write or click editor elements until the actual document editor page is loaded.
+- Never hallucinate elements or selectors. You MUST ONLY use selectors that are exactly present in the provided Elements list. Do not invent selectors (e.g. "first cell", "row-1", etc.) if they are not in the list.
 - Generate all necessary steps for the current page state (e.g. fill all inputs, select options).
 - If a click or navigation action is required that will change the page or load new content, make it the LAST action in the workflow list.
-- Use selectors exactly as shown in elements list.
 - If an element shows [filled: xxx] and it has the correct value, skip it.
 - Extract real values from user goal (names, emails, etc.).
 - Never repeat a step you already completed.`;
@@ -138,7 +139,7 @@ Use selectors exactly as listed. Extract real values from user goal.`;
 
     if (request.pageContext) {
       prompt += `Page: ${request.pageContext.title} (${request.pageContext.url})\n`;
-      const elements = (request.pageContext.elements ?? []).slice(0, 20);
+      const elements = (request.pageContext.elements ?? []).slice(0, 100);
       if (elements.length) {
         prompt += `Elements:\n`;
         elements.forEach((el, i) => {

@@ -323,10 +323,7 @@ async function executePrompt(prompt: string): Promise<Response> {
             }
             if (urlChanged) {
               pageJustNavigated = true;
-              break;
-            } else {
-              pageMenuOpened = true;
-              break;
+              break; // Page navigated: break batch execution to re-analyze
             }
           } else {
             await new Promise(resolve => setTimeout(resolve, 400));
@@ -409,7 +406,7 @@ async function fetchAgentStep(
     ...pageContext,
     elements: (pageContext.elements ?? [])
       .filter((el: any) => el.type === 'input' || el.type === 'button' || el.type === 'select' || el.type === 'link')
-      .slice(0, 25),
+      .slice(0, 100),
   } : undefined;
 
   const aiRequest: AIRequest = {
