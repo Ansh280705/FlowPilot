@@ -1,4 +1,4 @@
-﻿import type { Message, Response, Workflow, WorkflowExecution, AIRequest } from '../types/workflow';
+import type { Message, Response, Workflow, WorkflowExecution, AIRequest } from '../types/workflow';
 
 const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:3002/api';
 const TOKEN_KEY = 'fp_token';
@@ -279,7 +279,8 @@ async function executePrompt(prompt: string): Promise<Response> {
         broadcastExecutionUpdate(execution);
       }
 
-      if (agentResult.done || !agentResult.step) {
+      const stepsToRun = agentResult.steps || [];
+      if (agentResult.done || stepsToRun.length === 0) {
         if (round === 0 && !agentResult.done) {
           execution.status = 'failed';
           execution.error = agentResult.reasoning || 'AI could not find a next action on this page.';
@@ -287,58 +288,63 @@ async function executePrompt(prompt: string): Promise<Response> {
         break;
       }
 
-      const step = agentResult.step;
-      const urlAtRoundStart = (await chrome.tabs.get(tab.id)).url || '';
+      let executionError = null;
+      for (const step of stepsToRun) {
+        if (stopRequested || isTimedOut()) break;
 
-      globalStepIndex++;
-      execution.currentStep = globalStepIndex;
-      if (step.retryCount == null) step.retryCount = 2;
+        const urlAtRoundStart = (await chrome.tabs.get(tab.id)).url || '';
+        globalStepIndex++;
+        execution.currentStep = globalStepIndex;
+        if (step.retryCount == null) step.retryCount = 2;
 
-      try {
-        const result = await executeStep(tab.id, step, execution.variables);
-        const label = step.description || `${step.action} ${step.target || ''}`.trim();
-        completedSteps.push(label);
-        execution.logs.push({
-          timestamp: new Date().toISOString(),
-          level: 'info',
-          message: `Step ${globalStepIndex}: ${label}`,
-          step: globalStepIndex - 1,
-          details: result,
-        });
-        broadcastExecutionUpdate(execution);
+        try {
+          const result = await executeStep(tab.id, step, execution.variables);
+          const label = step.description || `${step.action} ${step.target || ''}`.trim();
+          completedSteps.push(label);
+          execution.logs.push({
+            timestamp: new Date().toISOString(),
+            level: 'info',
+            message: `Step ${globalStepIndex}: ${label}`,
+            step: globalStepIndex - 1,
+            details: result,
+          });
+          broadcastExecutionUpdate(execution);
 
-        if (step.action === 'click' || step.action === 'navigate') {
-          const pollUntil = Date.now() + Math.max(step.waitTime || 800, 3500);
-          let urlChanged = false;
-          while (Date.now() < pollUntil) {
-            await new Promise(resolve => setTimeout(resolve, 250));
-            const currentUrl = (await chrome.tabs.get(tab.id)).url || '';
-            if (currentUrl !== urlAtRoundStart) {
-              urlChanged = true;
+          if (step.action === 'click' || step.action === 'navigate') {
+            const pollUntil = Date.now() + Math.max(step.waitTime || 800, 3500);
+            let urlChanged = false;
+            while (Date.now() < pollUntil) {
+              await new Promise(resolve => setTimeout(resolve, 250));
+              const currentUrl = (await chrome.tabs.get(tab.id)).url || '';
+              if (currentUrl !== urlAtRoundStart) {
+                urlChanged = true;
+                break;
+              }
+            }
+            if (urlChanged) {
+              pageJustNavigated = true;
+              break;
+            } else {
+              pageMenuOpened = true;
               break;
             }
-          }
-          if (urlChanged) {
-            pageJustNavigated = true;
           } else {
-            pageMenuOpened = true;
+            await new Promise(resolve => setTimeout(resolve, 400));
           }
-        } else {
-          await new Promise(resolve => setTimeout(resolve, 400));
+        } catch (error) {
+          executionError = (error as Error).message || 'Unknown step error';
+          execution.logs.push({
+            timestamp: new Date().toISOString(),
+            level: 'error',
+            message: `Step ${globalStepIndex} failed: ${executionError}`,
+            step: globalStepIndex - 1,
+            details: executionError,
+          });
+          execution.status = 'failed';
+          execution.error = executionError;
+          broadcastExecutionUpdate(execution);
+          break;
         }
-      } catch (error) {
-        const errMsg = (error as Error).message || 'Unknown step error';
-        execution.logs.push({
-          timestamp: new Date().toISOString(),
-          level: 'error',
-          message: `Step ${globalStepIndex} failed: ${errMsg}`,
-          step: globalStepIndex - 1,
-          details: errMsg,
-        });
-        execution.status = 'failed';
-        execution.error = errMsg;
-        broadcastExecutionUpdate(execution);
-        break;
       }
 
       if (execution.status === 'failed' || stopRequested || isTimedOut()) break;
@@ -389,7 +395,7 @@ async function executePrompt(prompt: string): Promise<Response> {
 }
 
 interface AgentStepResult {
-  step: any | null;
+  steps: any[];
   reasoning: string;
   done: boolean;
 }
@@ -444,7 +450,7 @@ async function fetchAgentStep(
   }
 
   return {
-    step: steps[0] ?? null,
+    steps,
     reasoning: data?.reasoning || '',
     done: data?.done === true || (steps.length === 0 && !data?.reasoning?.includes('⚠️')),
   };

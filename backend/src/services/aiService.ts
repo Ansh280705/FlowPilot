@@ -1,4 +1,4 @@
-﻿import type { AIRequest, AIResponse, WorkflowStep } from '../types/workflow';
+import type { AIRequest, AIResponse, WorkflowStep } from '../types/workflow';
 import { formatPoolExhaustedError, groqKeyPool, parseRetryAfterSeconds } from './groqKeyPool';
 
 // 70b for accuracy, fall back to 8b instant on rate-limit
@@ -75,8 +75,6 @@ export class AIService {
           const done = parsed.done === true
             || (workflow.length === 0 && /complete|done|finished|success/i.test(reasoning));
 
-          if (isAgent && workflow.length > 1) workflow = [workflow[0]];
-
           return {
             enhancedPrompt: this.enhancePrompt(request.prompt),
             workflow,
@@ -109,17 +107,19 @@ export class AIService {
   }
 
   private getAgentSystemPrompt(): string {
-    return `Browser automation agent. Pick ONE next action toward the goal.
+    return `Browser automation agent. Generate a list of steps to execute on the current page toward the goal.
+If a step will cause the page to navigate or load new content (like clicking a link/button that submits/navigates), make that the last step in this batch so the agent can re-evaluate on the new page.
 
-Return JSON: {"reasoning":"short reason","done":false,"workflow":[{"id":"s1","action":"click","target":"text","selector":"exact selector","value":"for type","description":"what"}]}
+Return JSON: {"reasoning":"short reason","done":false,"workflow":[{"id":"s1","action":"click|type|select|navigate|wait|scroll","target":"text","selector":"exact selector","value":"for type","description":"what"}]}
 When goal complete: {"reasoning":"done","done":true,"workflow":[]}
 
 Rules:
-- 1 step max
-- Use selector exactly as shown in elements list
-- If an element shows [filled: xxx] it already has that value — skip it, move to next field
-- Extract real values from user goal (names, emails, etc.)
-- Never repeat a step you already completed`;
+- Generate all necessary steps for the current page state (e.g. fill all inputs, select options).
+- If a click or navigation action is required that will change the page or load new content, make it the LAST action in the workflow list.
+- Use selectors exactly as shown in elements list.
+- If an element shows [filled: xxx] and it has the correct value, skip it.
+- Extract real values from user goal (names, emails, etc.).
+- Never repeat a step you already completed.`;
   }
 
   private getWorkflowSystemPrompt(): string {
