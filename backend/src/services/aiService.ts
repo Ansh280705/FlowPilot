@@ -17,7 +17,7 @@ function formatAIError(error: unknown): string {
   return detail;
 }
 
-const VALID_ACTIONS = ['click','type','select','wait','scroll','navigate','pressKey','hover','extract','upload','conditional','paste'];
+const VALID_ACTIONS = ['click','type','select','wait','scroll','navigate','pressKey','hover','extract','upload','conditional','paste','javascript'];
 
 function sanitizeSteps(steps: unknown[]): WorkflowStep[] {
   return steps
@@ -110,12 +110,13 @@ export class AIService {
     return `Browser automation agent. Generate a list of steps to execute on the current page toward the goal.
 If a step will cause the page to navigate or load new content (like clicking a link/button that submits/navigates), make that the last step in this batch so the agent can re-evaluate on the new page.
 
-Return JSON: {"reasoning":"short reason","done":false,"workflow":[{"id":"s1","action":"click|type|select|navigate|wait|scroll|paste","target":"text","selector":"exact selector","value":"for type/paste","description":"what"}]}
+Return JSON: {"reasoning":"short reason","done":false,"workflow":[{"id":"s1","action":"click|type|select|navigate|wait|scroll|paste|javascript","target":"text/description","selector":"exact selector","value":"for type/paste/javascript-code","description":"what"}]}
 When goal complete: {"reasoning":"done","done":true,"workflow":[]}
 
 Rules:
 - Verify your current URL and page state. If the user prompt says "fill X" or "write Y in sheet" but you are on a dashboard, home, or listing page (e.g., docs.google.com/spreadsheets/u/0/), you must FIRST open a document/spreadsheet by clicking its template/card in the elements list (e.g., the "Blank" template or the target document). Do NOT attempt to write or click editor elements until the actual document editor page is loaded.
 - Use "paste" action to write large structured data, TSV (tab-separated values), or multiline text blocks into spreadsheets/grids at once rather than typing them cell-by-cell. For example, to fill multiple rows of employee data, generate the TSV string and paste it into the spreadsheet cell.
+- Use "javascript" action when you need to execute a custom script directly on the page. The "value" property should contain the complete javascript code string (e.g., IIFE syntax to query selectors, loops, event dispatching, or page context logic).
 - Never hallucinate elements or selectors. You MUST ONLY use selectors that are exactly present in the provided Elements list. Do not invent selectors (e.g. "first cell", "row-1", etc.) if they are not in the list.
 - Generate all necessary steps for the current page state (e.g. fill all inputs, select options).
 - If a click or navigation action is required that will change the page or load new content, make it the LAST action in the workflow list.
@@ -126,7 +127,7 @@ Rules:
 
   private getWorkflowSystemPrompt(): string {
     return `Browser automation AI. Return JSON {"workflow":[...]}.
-Each step: {"id":"s1","action":"click|type|select|navigate|wait|scroll|paste","target":"element text","selector":"css selector","value":"for type/select/paste","description":"what this does"}
+Each step: {"id":"s1","action":"click|type|select|navigate|wait|scroll|paste|javascript","target":"element text","selector":"css selector","value":"for type/select/paste/javascript-code","description":"what this does"}
 Use selectors exactly as listed. Extract real values from user goal.`;
   }
 

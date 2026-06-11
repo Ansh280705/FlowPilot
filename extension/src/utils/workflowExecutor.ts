@@ -46,6 +46,9 @@ export class WorkflowExecutor {
         case 'paste':
           return await this.paste(processedValue, step);
         
+        case 'javascript':
+          return await this.executeJavascript(processedValue, step);
+        
         case 'pressKey':
           return await this.pressKey(processedValue, step);
         
@@ -455,5 +458,46 @@ export class WorkflowExecutor {
     activeEl.dispatchEvent(pasteEvent);
 
     await this.wait(step.waitTime || 500);
+  }
+
+  private async executeJavascript(code: string, _step: WorkflowStep): Promise<any> {
+    return new Promise((resolve, reject) => {
+      try {
+        const script = document.createElement('script');
+        const token = Math.random().toString(36).substring(2);
+        
+        const listener = (event: Event) => {
+          const customEvent = event as CustomEvent;
+          if (customEvent.detail.token === token) {
+            window.removeEventListener('fp_script_result', listener);
+            if (customEvent.detail.success) {
+              resolve(customEvent.detail.result);
+            } else {
+              reject(new Error(customEvent.detail.error));
+            }
+          }
+        };
+        window.addEventListener('fp_script_result', listener);
+
+        script.textContent = `
+          (() => {
+            try {
+              const result = (() => { ${code} })();
+              window.dispatchEvent(new CustomEvent('fp_script_result', {
+                detail: { token: '${token}', success: true, result }
+              }));
+            } catch (err) {
+              window.dispatchEvent(new CustomEvent('fp_script_result', {
+                detail: { token: '${token}', success: false, error: err.message }
+              }));
+            }
+          })();
+        `;
+        (document.head || document.documentElement).appendChild(script);
+        script.remove();
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 }

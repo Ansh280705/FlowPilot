@@ -10,7 +10,8 @@ export type WorkflowAction =
   | 'navigate'
   | 'pressKey'
   | 'conditional'
-  | 'paste';
+  | 'paste'
+  | 'javascript';
 
 export interface WorkflowStep {
   id: string;
